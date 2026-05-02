@@ -20,13 +20,13 @@ import {
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { isDailyNotifEnabled, setDailyNotifEnabled } from '../hooks/useNotificationScheduler';
+import { useNotificationScheduler } from '../hooks/useNotificationScheduler';
 
 export default function SettingsPage() {
   const { settings, updateSettings, clearAllData, isLoading } = useCycle();
   const [localSettings, setLocalSettings] = useState(settings);
   const { theme, setTheme } = useTheme();
-  const [dailyNotif, setDailyNotif] = useState(isDailyNotifEnabled);
+  const [dailyNotif, setDailyNotif] = useState(settings.dailyReminderEnabled || false);
 
   useEffect(() => {
     setLocalSettings(settings);
@@ -34,11 +34,11 @@ export default function SettingsPage() {
 
   // Keep dailyNotif in sync if notifications are disabled externally
   useEffect(() => {
-    if (!localSettings.notificationsEnabled && dailyNotif) {
-      setDailyNotifEnabled(false);
-      setDailyNotif(false);
+    setDailyNotif(localSettings.dailyReminderEnabled || false);
+    if (!localSettings.notificationsEnabled && localSettings.dailyReminderEnabled) {
+      updateSettings({ dailyReminderEnabled: false });
     }
-  }, [localSettings.notificationsEnabled, dailyNotif]);
+  }, [localSettings.notificationsEnabled, localSettings.dailyReminderEnabled, updateSettings]);
 
   const handleSave = () => {
     updateSettings({
@@ -59,7 +59,7 @@ export default function SettingsPage() {
 
     if (!enabled && dailyNotif) {
       // Turn off daily reminder when notifications are disabled
-      await setDailyNotifEnabled(false);
+      updateSettings({ dailyReminderEnabled: false });
       setDailyNotif(false);
     }
 
@@ -68,15 +68,21 @@ export default function SettingsPage() {
   };
 
   /** Toggle daily 6 AM reminder. Fires a first notification immediately on activation. */
+  const { updatePeriodicSync, sendViaSW, markSentToday } = useNotificationScheduler(true); // Pass true as it's always enabled now
+
   const handleDailyNotifToggle = async (enabled: boolean) => {
     if (enabled) {
       if ('Notification' in window && Notification.permission !== 'granted') {
         const perm = await Notification.requestPermission();
         if (perm !== 'granted') return;
       }
+      // Fire immediately as first confirmation
+      markSentToday();
+      sendViaSW();
     }
-    await setDailyNotifEnabled(enabled);
+    updateSettings({ dailyReminderEnabled: enabled });
     setDailyNotif(enabled);
+    updatePeriodicSync(enabled);
   };
 
   const dailyDisabled = !localSettings.notificationsEnabled;

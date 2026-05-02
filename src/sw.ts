@@ -72,7 +72,6 @@ async function sendDailyReminderIfNeeded() {
     icon: 'pwa-192x192.svg',
     badge: 'pwa-192x192.svg',
     tag: 'ciclo-daily',
-    renotify: false,
     data: { url: self.registration.scope },
   });
 

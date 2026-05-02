@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { Toaster, toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +9,7 @@ import { UsernameModal } from "@/components/UsernameModal";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { AppMetaProvider, useAppMetaContext } from "@/context/AppMetaContext";
 import { useRegisterSW } from "virtual:pwa-register/react";
-import { useNotificationScheduler, isDailyNotifEnabled, DAILY_NOTIF_LS_KEY } from "@/hooks/useNotificationScheduler";
+import { useNotificationScheduler } from "@/hooks/useNotificationScheduler";
 
 import Dashboard from "@/pages/Dashboard";
 import CalendarPage from "@/pages/Calendar";
@@ -25,23 +25,9 @@ function AppShell() {
     onRegistered(r) { r && setInterval(() => r.update(), 60 * 60 * 1000); },
   });
 
-  // Reactive daily-notif state: listens to same-tab custom events AND cross-tab storage events
-  const [dailyEnabled, setDailyEnabled] = useState(isDailyNotifEnabled);
-  useEffect(() => {
-    const onCustom = (e: Event) => setDailyEnabled((e as CustomEvent<{ enabled: boolean }>).detail.enabled);
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === DAILY_NOTIF_LS_KEY) setDailyEnabled(e.newValue === '1');
-    };
-    window.addEventListener('ciclo-daily-notif-changed', onCustom);
-    window.addEventListener('storage', onStorage);
-    return () => {
-      window.removeEventListener('ciclo-daily-notif-changed', onCustom);
-      window.removeEventListener('storage', onStorage);
-    };
-  }, []);
-
-  // Daily 6 AM notification scheduler
-  useNotificationScheduler(dailyEnabled);
+  // Daily 6 AM notification scheduler (enabled state is now managed by useCycle and passed down)
+  // This hook is now primarily for scheduling the local setTimeout fallback.
+  useNotificationScheduler(true); // Always enable local scheduling, its internal logic will check permissions/settings
 
   useEffect(() => {
     if (needRefresh) {

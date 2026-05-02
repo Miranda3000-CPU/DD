@@ -12,6 +12,7 @@ export interface AppSettings {
   cycleLength: number;      // default 28
   periodDuration: number;   // default 5
   notificationsEnabled: boolean;
+  dailyReminderEnabled?: boolean; // Novo campo para o lembrete diário;
 }
 
 export class CycloDb extends Dexie {

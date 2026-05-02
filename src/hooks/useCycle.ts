@@ -7,7 +7,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   id: 1,
   cycleLength: 28,
   periodDuration: 5,
-  notificationsEnabled: false
+  notificationsEnabled: false,
+  dailyReminderEnabled: false
 };
 
 export function useCycle() {
@@ -25,6 +26,9 @@ export function useCycle() {
       if (!loadedSettings) {
         await db.settings.add(DEFAULT_SETTINGS);
         loadedSettings = DEFAULT_SETTINGS;
+      } else {
+        // Ensure dailyReminderEnabled is set for existing users
+        loadedSettings = { ...DEFAULT_SETTINGS, ...loadedSettings };
       }
       setSettings(loadedSettings);
 

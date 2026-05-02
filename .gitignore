@@ -1,0 +1,43 @@
+# Dependências
+node_modules
+.pnpm-store
+
+# Saída de build e diretórios temporários
+dist
+dist-ssr
+build
+dev-dist
+
+# Cache de ferramentas e logs
+.vite
+.pnpm-debug.log*
+*.tsbuildinfo
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variáveis de ambiente (Nunca versionar segredos)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Configurações de IDE (VS Code, WebStorm, etc)
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*.suo
+*.ntvs*
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Replit
+.replit
+.replit-artifact/
+.upm/

@@ -30,7 +30,7 @@ export function InstallPrompt() {
               <Download className="w-4 h-4" />
             </div>
             <p className="text-sm text-foreground flex-1 leading-snug">
-              Instale o <strong>Ciclo</strong> na tela inicial
+              Instale o <strong>DD</strong> na tela inicial
             </p>
             <Button
               size="sm"
@@ -71,7 +71,7 @@ export function InstallPrompt() {
                 <Download className="w-4 h-4" />
               </div>
               <p className="text-sm text-foreground flex-1 leading-snug">
-                Adicione o <strong>Ciclo</strong> à tela inicial
+                Adicione o <strong>DD</strong> à tela inicial
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-primary font-medium">

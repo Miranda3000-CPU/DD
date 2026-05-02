@@ -22,8 +22,8 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.svg', 'pwa-512x512.svg'],
       manifest: {
-        name: 'Ciclo - Acompanhamento Menstrual',
-        short_name: 'Ciclo',
+        name: 'DD - Diário Dela',
+        short_name: 'DD',
         description: 'Acompanhe seu ciclo menstrual de forma privada e offline.',
         theme_color: '#ff4d6d',
         background_color: '#fff5f7',

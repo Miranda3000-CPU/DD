@@ -46,7 +46,7 @@ export function UsernameModal({ visible, onSave }: UsernameModalProps) {
               </div>
 
               <h2 className="text-xl font-bold text-foreground mb-1">
-                Bem-vinda ao Ciclo!
+                Bem-vinda ao Diário Dela!
               </h2>
               <p className="text-sm text-muted-foreground mb-6">
                 Como podemos te chamar?

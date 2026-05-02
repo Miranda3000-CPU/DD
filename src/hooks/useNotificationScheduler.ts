@@ -25,8 +25,8 @@ async function sendViaSW(): Promise<void> {
     }
   } catch { /* SW unavailable */ }
   if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('Ciclo', {
-      body: 'Bom dia! Abra o Ciclo para acompanhar seu ciclo menstrual.',
+    new Notification('DD', {
+      body: 'Bom dia! Abra o DD para acompanhar seu ciclo menstrual.',
       icon: '/pwa-192x192.svg',
       tag: 'ciclo-daily',
     });

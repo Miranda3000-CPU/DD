@@ -45,7 +45,7 @@ export function PrivacyNotice({ visible, onAcknowledge }: PrivacyNoticeProps) {
               </h2>
 
               <p className="text-sm text-muted-foreground leading-relaxed mb-1">
-                O <strong className="text-foreground">Ciclo</strong> foi desenvolvido por{' '}
+                O <strong className="text-foreground">Diário Dela</strong> foi desenvolvido por{' '}
                 <strong className="text-foreground">Jeiel Miranda</strong> e não coleta
                 nenhum dado pessoal. Tudo é armazenado exclusivamente no seu dispositivo,
                 sem servidores externos.

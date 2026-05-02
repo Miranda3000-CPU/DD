@@ -67,8 +67,8 @@ async function sendDailyReminderIfNeeded() {
   const last = await getMetaValue(key);
   if (last === today) return;
 
-  await self.registration.showNotification('Ciclo', {
-    body: 'Bom dia! Abra o Ciclo para acompanhar seu ciclo menstrual.',
+  await self.registration.showNotification('DD', {
+    body: 'Bom dia! Abra o DD para acompanhar seu ciclo menstrual.',
     icon: 'pwa-192x192.svg',
     badge: 'pwa-192x192.svg',
     tag: 'ciclo-daily',

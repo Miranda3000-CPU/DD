@@ -39,6 +39,8 @@ export default defineConfig({
       injectManifest: {
         // Pre-cache all built assets so the SW can serve them offline
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot,webp}'],
+        // Aumenta o limite de cache para 4MB para acomodar o bundle atual
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       // Enable SW in development for testing
       devOptions: {
@@ -50,9 +52,7 @@ export default defineConfig({
     process.env.REPL_ID !== undefined
       ? [
           await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer({
-              root: path.resolve(import.meta.dirname, ".."),
-            }),
+            m.cartographer(),
           ),
           await import("@replit/vite-plugin-dev-banner").then((m) =>
             m.devBanner(),
@@ -71,6 +71,21 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@tensorflow/tfjs')) return 'vendor-tfjs';
+            if (id.includes('recharts')) return 'vendor-charts';
+            // Agrupa framer-motion, lucide e todos os componentes da radix
+            if (id.includes('framer-motion') || id.includes('lucide-react') || id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            if (id.includes('react') || id.includes('wouter')) return 'vendor-react';
+          }
+        },
+      },
+    },
   },
   server: {
     port,

@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 type SortOrder = 'desc' | 'asc';
 
 export default function HistoryPage() {
-  const { cycles, deleteEntry, isLoading, cycleDurations, avgCycleLength } = useCycle();
+  const { cycles, deleteEntry, isLoading, avgCycleLength } = useCycle();
   const forecast = calculateCycleForecast(cycles);
   const prediction = cycles.length >= 2 ? forecast.adaptiveCycleDays : null;
   const predicting = false;

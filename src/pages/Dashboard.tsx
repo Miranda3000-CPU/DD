@@ -134,10 +134,10 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Próxima menstruação</p><p className="mt-1 text-sm font-semibold">{forecast.nextPeriod ? format(forecast.nextPeriod, "dd 'de' MMM", {locale:ptBR}) : 'Registre um ciclo'}</p></div>
                 <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Janela estimada</p><p className="mt-1 text-sm font-semibold">{forecast.windowStart && forecast.windowEnd ? `${format(forecast.windowStart,'dd/MM')} – ${format(forecast.windowEnd,'dd/MM')}` : 'Indisponível'}</p></div>
-                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Média histórica</p><p className="mt-1 text-sm font-semibold">${forecast.averageCycleDays} dias</p></div>
-                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Margem estimada</p><p className="mt-1 text-sm font-semibold">±${forecast.uncertaintyDays} dias</p></div>
+                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Média histórica</p><p className="mt-1 text-sm font-semibold">{forecast.averageCycleDays} dias</p></div>
+                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Margem estimada</p><p className="mt-1 text-sm font-semibold">±{forecast.uncertaintyDays} dias</p></div>
               </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">${forecast.confidence}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{forecast.confidence}</p>
               ${forecast.attention.length ? `<div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3">${forecast.attention.map(item => `<p className="text-xs leading-relaxed">${item}</p>`).join('')}</div>` : ''}
               <p className="text-xs leading-relaxed text-muted-foreground">A previsão é aproximada, não confirma ovulação e não deve ser usada como método contraceptivo. Consulte o Guia para entender as limitações e as fontes.</p>
             </CardContent>
@@ -147,7 +147,7 @@ export default function Dashboard() {
 
         {/* ── Nudge ────────────────────────────────────────────── */}
         <AnimatePresence>
-          {!isLoading && cycleDurations.length < 3 && cycleDurations.length > 0 && (
+          {!isLoading && cycles.length < 3 && cycles.length > 0 && (
             <motion.div
               key="nudge"
               initial={{ opacity: 0, y: 12 }}
@@ -160,7 +160,7 @@ export default function Dashboard() {
                   <Sparkles className="w-4 h-4 text-primary shrink-0" />
                   <p className="text-xs text-muted-foreground">
                     Registre mais {3 - cycleDurations.length} ciclo
-                    {3 - cycleDurations.length > 1 ? 's' : ''} para ativar a previsão com IA.
+                    {3 - cycleDurations.length > 1 ? 's' : ''} para melhorar a estimativa estatística. As previsões continuam aproximadas.
                   </p>
                 </CardContent>
               </Card>

@@ -21,12 +21,17 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { useNotificationScheduler } from '../hooks/useNotificationScheduler';
+import { exportBackup, importBackup } from '../services/backup';
+import { Download, Upload, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { settings, updateSettings, clearAllData, isLoading } = useCycle();
   const [localSettings, setLocalSettings] = useState(settings);
   const { theme, setTheme } = useTheme();
   const [dailyNotif, setDailyNotif] = useState(settings.dailyReminderEnabled || false);
+  const [backupPassword, setBackupPassword] = useState('');
+  const [backupBusy, setBackupBusy] = useState(false);
 
   useEffect(() => {
     setLocalSettings(settings);
@@ -241,6 +246,34 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* ── Local encrypted backup ───────────────────────────── */}
+          <Card className="rounded-2xl border border-border/50 bg-card shadow-sm">
+            <CardContent className="space-y-4 p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary"><ShieldCheck className="h-5 w-5"/></div>
+                <div><h2 className="font-semibold">Backup privado</h2><p className="text-xs text-muted-foreground">Arquivo criptografado, sem nuvem ou conta</p></div>
+              </div>
+              <p className="text-sm text-muted-foreground">Proteja seus ciclos, registros diários e configurações com uma senha. Guarde o arquivo e a senha em local seguro.</p>
+              <div className="space-y-2"><Label htmlFor="backup-password">Senha do backup (mínimo 10 caracteres)</Label><Input id="backup-password" type="password" autoComplete="new-password" value={backupPassword} onChange={e=>setBackupPassword(e.target.value)} placeholder="Crie uma senha forte"/></div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={async()=>{
+                  setBackupBusy(true);
+                  try { const blob = await exportBackup(backupPassword); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "diario-dela.ddwebbackup"; a.click(); URL.revokeObjectURL(url); toast.success("Backup criptografado exportado."); }
+                  catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao exportar backup."); }
+                  finally { setBackupBusy(false); }
+                }}><Download className="mr-2 h-4 w-4"/>Exportar backup</Button>
+                <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={()=>{
+                  const picker = document.createElement("input"); picker.type = "file"; picker.accept = ".ddwebbackup,application/octet-stream";
+                  picker.onchange = async () => { const file = picker.files?.[0]; if (!file) return; setBackupBusy(true);
+                    try { const result = await importBackup(file, backupPassword); toast.success("Importado: " + result.cyclesAdded + " ciclos e " + result.logsAdded + " registros diários novos. Dados locais existentes preservados."); window.location.reload(); }
+                    catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao importar backup."); }
+                    finally { setBackupBusy(false); }
+                  }; picker.click();
+                }}><Upload className="mr-2 h-4 w-4"/>Importar backup</Button>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">A importação mescla registros por data e não apaga dados locais. O backup web usa formato próprio e não é compatível diretamente com o arquivo Android .ddbackup.</p>
+            </CardContent>
+          </Card>
           {/* ── Danger zone ────────────────────────────────────── */}
           <AlertDialog>
             <AlertDialogTrigger asChild>

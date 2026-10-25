@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCycle } from '../hooks/useCycle';
-import { useCyclePrediction } from '../hooks/useCyclePrediction';
+import { calculateCycleForecast } from '../utils/cycleEngine';
 import { PageTransition } from '../components/layout/PageTransition';
 import { HistoryList } from '../components/HistoryList';
 import { SearchBar } from '../components/SearchBar';
@@ -16,7 +16,9 @@ type SortOrder = 'desc' | 'asc';
 
 export default function HistoryPage() {
   const { cycles, deleteEntry, isLoading, cycleDurations, avgCycleLength } = useCycle();
-  const { prediction, loading: predicting } = useCyclePrediction(cycleDurations);
+  const forecast = calculateCycleForecast(cycles);
+  const prediction = cycles.length >= 2 ? forecast.adaptiveCycleDays : null;
+  const predicting = false;
 
   const [query, setQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');

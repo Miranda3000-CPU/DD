@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import { PageTransition } from "../components/layout/PageTransition";
 import { Card, CardContent } from "../components/ui/card";

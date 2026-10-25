@@ -61,7 +61,7 @@ export async function importBackup(file: File, password: string): Promise<{ cycl
 
   let cyclesAdded = 0;
   let logsAdded = 0;
-  await db.transaction("rw", db.cycles, db.dailyLogs, async () => {
+  await db.transaction("rw", db.cycles, db.dailyLogs, db.settings, async () => {
     for (const incoming of payload.cycles) {
       if (!incoming.startDate || !/^\d{4}-\d{2}-\d{2}$/.test(incoming.startDate)) continue;
       const existing = await db.cycles.where("startDate").equals(incoming.startDate).first();
@@ -79,5 +79,16 @@ export async function importBackup(file: File, password: string): Promise<{ cycl
       }
     }
   });
+    // Restore preferences only if this device has none; never overwrite local settings.
+    if (Array.isArray(payload.settings) && payload.settings.length > 0) {
+      const localSettings = await db.settings.toArray();
+      if (localSettings.length === 0) {
+        for (const setting of payload.settings) {
+          const copy = { ...setting };
+          delete copy.id;
+          await db.settings.add(copy);
+        }
+      }
+    }
   return { cyclesAdded, logsAdded };
 }

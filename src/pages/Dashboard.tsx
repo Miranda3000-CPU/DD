@@ -167,7 +167,7 @@ export default function Dashboard() {
                 <CardContent className="p-4 flex gap-3 items-center">
                   <Sparkles className="w-4 h-4 text-primary shrink-0" />
                   <p className="text-xs text-muted-foreground">
-                    Registre mais {3 - cycleDurations.length} ciclo
+                    Registre mais {3 - cycles.length} ciclo
                     {3 - cycleDurations.length > 1 ? 's' : ''} para melhorar a estimativa estatística. As previsões continuam aproximadas.
                   </p>
                 </CardContent>

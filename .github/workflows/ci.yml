@@ -1,0 +1,27 @@
+name: Validate DD web app
+
+on:
+  pull_request:
+  push:
+    branches: [main, integration/academic-offline]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: TypeScript check
+        run: pnpm typecheck
+      - name: Production build
+        run: pnpm build

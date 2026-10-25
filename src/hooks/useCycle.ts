@@ -68,7 +68,10 @@ export function useCycle() {
     try {
       await db.cycles.add({
         startDate: formattedDate,
-        createdAt: new Date().toISOString()
+        periodDurationDays: settings.periodDuration,
+        flowIntensity: 'Médio',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       });
       toast.success('Ciclo registrado com sucesso!');
       await loadData();

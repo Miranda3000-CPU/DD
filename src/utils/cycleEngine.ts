@@ -85,8 +85,8 @@ export function calculateCycleForecast(cycles: CycleEntry[], today = new Date())
     attention.push("A média recente dos ciclos ficou abaixo de 21 dias. Considere conversar com um profissional de saúde se esse padrão persistir.");
   if (durations.length >= 2 && averageCycleDays > 35)
     attention.push("A média recente dos ciclos ficou acima de 35 dias. Considere conversar com um profissional de saúde se esse padrão persistir.");
-  if (periodLengths.some(d => d > 8))
-    attention.push("Há registro de sangramento com mais de 8 dias. Considere orientação de um profissional de saúde.");
+  if (periodLengths.some(d => d > 7))
+    attention.push("Há registro de sangramento com mais de 7 dias. Considere orientação de um profissional de saúde.");
   return {
     averageCycleDays, adaptiveCycleDays, averagePeriodDays, uncertaintyDays,
     nextPeriod, windowStart, windowEnd, ovulation, fertileStart, fertileEnd,

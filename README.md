@@ -61,7 +61,7 @@ Desenvolvido por **Jeiel Miranda**. Conheça mais em [jeielmiranda.com.br](https
 
 ## Recursos locais e modo offline
 
-- Diário diário para fluxo, dor, sintomas, humor, energia, sono, muco cervical e anotações.
+- Diário de bem-estar para fluxo, dor, sintomas, humor, energia, sono, muco cervical e anotações.
 - Estimativa estatística transparente do ciclo, margem de incerteza e projeções de até 90 dias.
 - Guia educativo com referências clínicas/acadêmicas incluídas no pacote da aplicação.
 - Backup local criptografado por senha usando PBKDF2-HMAC-SHA-256 e AES-256-GCM; importação com mesclagem sem apagar registros locais existentes.

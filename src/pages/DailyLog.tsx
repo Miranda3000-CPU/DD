@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { PageTransition } from "../components/layout/PageTransition";
 import { Card, CardContent } from "../components/ui/card";
@@ -10,7 +11,7 @@ import { Textarea } from "../components/ui/textarea";
 import { db, DailyLogEntry } from "../services/db";
 import { HeartPulse, Save, CalendarDays } from "lucide-react";
 
-const symptomsList = ["Cólicas", "Dor de cabeça", "Inchaço", "Acne", "Sensibilidade mamária", "Cansaço"];
+const symptomsList = ["Cólicas", "Dor de cabeça", "Inchaço", "Acne", "Sensibilidade mamária", "Cansaço", "Náusea", "Dor lombar", "Diarreia", "Constipação", "Desejo por alimentos", "Alteração de apetite", "Irritabilidade", "Ansiedade", "Tristeza", "Dificuldade de concentração", "Ondas de calor", "Seios doloridos", "Spotting", "Dor pélvica"];
 
 export default function DailyLogPage() {
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -20,6 +21,8 @@ export default function DailyLogPage() {
   const [mood, setMood] = useState("");
   const [energy, setEnergy] = useState("");
   const [sleep, setSleep] = useState("");
+  const [mucus, setMucus] = useState("");
+  const [recentLogs, setRecentLogs] = useState<DailyLogEntry[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +36,9 @@ export default function DailyLogPage() {
       setMood(entry?.mood ?? "");
       setEnergy(entry?.energyLevel ?? "");
       setSleep(entry?.sleepQuality ?? "");
+      setMucus(entry?.cervicalMucus ?? "");
       setNotes(entry?.notes ?? "");
+      setRecentLogs(await db.dailyLogs.orderBy("date").reverse().limit(7).toArray());
     }).catch(() => toast.error("Não foi possível abrir o registro local."));
     return () => { active = false; };
   }, [date]);
@@ -51,9 +56,10 @@ export default function DailyLogPage() {
         date, flowIntensity: flow || undefined, painLevel: pain,
         symptoms: symptoms.join("|"), mood: mood || undefined,
         energyLevel: energy || undefined, sleepQuality: sleep || undefined,
-        notes, updatedAt: new Date().toISOString()
+        cervicalMucus: mucus || undefined, notes, updatedAt: new Date().toISOString()
       };
       await db.dailyLogs.put(entry);
+      setRecentLogs(await db.dailyLogs.orderBy("date").reverse().limit(7).toArray());
       toast.success("Registro diário salvo somente neste dispositivo.");
     } catch {
       toast.error("Não foi possível salvar. Verifique o espaço disponível no dispositivo.");
@@ -77,9 +83,14 @@ export default function DailyLogPage() {
           <div className="space-y-2"><Label>Energia</Label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" value={energy} onChange={e=>setEnergy(e.target.value)}><option value="">Não informado</option>{["Baixa","Moderada","Alta"].map(v=><option key={v}>{v}</option>)}</select></div>
           <div className="space-y-2 sm:col-span-2"><Label>Sono</Label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" value={sleep} onChange={e=>setSleep(e.target.value)}><option value="">Não informado</option>{["Ruim","Regular","Bom","Muito bom"].map(v=><option key={v}>{v}</option>)}</select></div>
         </div>
+        <div className="space-y-2"><Label>Muco cervical (opcional)</Label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" value={mucus} onChange={e=>setMucus(e.target.value)}><option value="">Não informado</option>{["Seco ou ausente","Pegajoso","Cremoso","Aquoso","Transparente e elástico"].map(v=><option key={v}>{v}</option>)}</select><p className="text-xs text-muted-foreground">A observação é pessoal e não confirma ovulação nem fertilidade.</p></div>
         <div className="space-y-2"><Label htmlFor="notes">Anotações pessoais</Label><Textarea id="notes" rows={4} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Como foi seu dia? (opcional)"/></div>
         <Button className="w-full rounded-2xl" onClick={save} disabled={loading}><Save className="mr-2 h-4 w-4"/>{loading?"Salvando…":"Salvar registro"}</Button>
       </CardContent>
     </Card>
+    <section className="space-y-3">
+      <h2 className="text-lg font-semibold">Registros recentes</h2>
+      {recentLogs.length === 0 ? <p className="text-sm text-muted-foreground">Seus registros salvos aparecerão aqui.</p> : recentLogs.map(log => <Card key={log.date} className="rounded-2xl shadow-sm"><CardContent className="flex items-start justify-between gap-3 p-4"><div><p className="text-sm font-semibold">{format(new Date(log.date + "T12:00:00"), "dd 'de' MMMM", {locale: ptBR})}</p><p className="mt-1 text-xs text-muted-foreground">{[log.flowIntensity, log.mood, log.energyLevel].filter(Boolean).join(" · ") || "Sem detalhes resumidos"}</p><p className="mt-1 text-xs text-muted-foreground">{log.symptoms.split("|").filter(Boolean).join(", ")}</p></div><Button size="sm" variant="outline" className="rounded-xl" onClick={()=>setDate(log.date)}>Ver</Button></CardContent></Card>)}
+    </section>
   </PageTransition>;
 }

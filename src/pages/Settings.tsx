@@ -289,8 +289,7 @@ export default function SettingsPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta ação não pode ser desfeita. Todos os seus ciclos registrados serão apagados
-                  permanentemente do seu dispositivo.
+                  Esta ação não pode ser desfeita. Todos os ciclos, registros diários e configurações serão apagados permanentemente deste dispositivo.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-4">

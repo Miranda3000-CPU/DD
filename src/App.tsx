@@ -15,6 +15,8 @@ import Dashboard from "@/pages/Dashboard";
 import CalendarPage from "@/pages/Calendar";
 import HistoryPage from "@/pages/History";
 import SettingsPage from "@/pages/Settings";
+import DailyLogPage from "@/pages/DailyLog";
+import EducationPage from "@/pages/Education";
 import NotFound from "@/pages/not-found";
 
 function AppShell() {
@@ -54,6 +56,8 @@ function AppShell() {
         <Route path="/" component={Dashboard} />
         <Route path="/calendar" component={CalendarPage} />
         <Route path="/history" component={HistoryPage} />
+        <Route path="/daily" component={DailyLogPage} />
+        <Route path="/guide" component={EducationPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route component={NotFound} />
       </Switch>

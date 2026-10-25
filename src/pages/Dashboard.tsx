@@ -138,7 +138,7 @@ export default function Dashboard() {
                 <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Margem estimada</p><p className="mt-1 text-sm font-semibold">±{forecast.uncertaintyDays} dias</p></div>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">{forecast.confidence}</p>
-              ${forecast.attention.length ? `<div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3">${forecast.attention.map(item => `<p className="text-xs leading-relaxed">${item}</p>`).join('')}</div>` : ''}
+              {forecast.attention.length > 0 && <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3">{forecast.attention.map(item => <p key={item} className="text-xs leading-relaxed">{item}</p>)}</div>}
               <p className="text-xs leading-relaxed text-muted-foreground">A previsão é aproximada, não confirma ovulação e não deve ser usada como método contraceptivo. Consulte o Guia para entender as limitações e as fontes.</p>
             </CardContent>
           </Card>

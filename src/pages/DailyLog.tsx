@@ -28,7 +28,7 @@ export default function DailyLogPage() {
 
   useEffect(() => {
     let active = true;
-    db.dailyLogs.where("date").equals(date).first().then((entry) => {
+    db.dailyLogs.where("date").equals(date).first().then(async (entry) => {
       if (!active) return;
       setFlow(entry?.flowIntensity ?? "");
       setPain(entry?.painLevel ?? "0");

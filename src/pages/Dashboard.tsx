@@ -11,7 +11,7 @@ import { LogCycleModal } from '../components/LogCycleModal';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Activity, Clock, Sparkles, Loader2, CalendarHeart } from 'lucide-react';
+import { Activity, Clock, Sparkles, CalendarHeart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Dashboard() {

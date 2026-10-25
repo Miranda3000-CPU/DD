@@ -58,3 +58,13 @@ Desenvolvido por **Jeiel Miranda**. Conheça mais em [jeielmiranda.com.br](https
 
 ---
 *Este projeto foi desenvolvido com foco em acessibilidade e performance, garantindo uma experiência nativa diretamente no navegador.*
+
+## Recursos locais e modo offline
+
+- Diário de bem-estar para fluxo, dor, sintomas, humor, energia, sono, muco cervical e anotações.
+- Estimativa estatística transparente do ciclo, margem de incerteza e projeções de até 90 dias.
+- Guia educativo com referências clínicas/acadêmicas incluídas no pacote da aplicação.
+- Backup local criptografado por senha usando PBKDF2-HMAC-SHA-256 e AES-256-GCM; importação com mesclagem sem apagar registros locais existentes.
+- O aplicativo é uma PWA: após abrir online e instalar o service worker, páginas e recursos pré-armazenados ficam disponíveis offline. A primeira instalação exige conexão e HTTPS/localhost.
+
+Para validar modo offline, siga [docs/OFFLINE-VALIDATION.md](docs/OFFLINE-VALIDATION.md). As estimativas são educativas e não devem ser usadas como método contraceptivo nem substituem orientação profissional.

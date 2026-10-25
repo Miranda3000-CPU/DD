@@ -68,7 +68,10 @@ export function useCycle() {
     try {
       await db.cycles.add({
         startDate: formattedDate,
-        createdAt: new Date().toISOString()
+        periodDurationDays: settings.periodDuration,
+        flowIntensity: 'Médio',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       });
       toast.success('Ciclo registrado com sucesso!');
       await loadData();
@@ -100,6 +103,7 @@ export function useCycle() {
   const clearAllData = async () => {
     try {
       await db.cycles.clear();
+      await db.dailyLogs.clear();
       await db.settings.clear();
       await db.settings.add(DEFAULT_SETTINGS);
       await loadData();

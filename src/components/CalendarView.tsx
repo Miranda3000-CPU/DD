@@ -108,7 +108,7 @@ export function CalendarView({ cycles, settings }: CalendarViewProps) {
 
       <div className="grid grid-cols-7 gap-y-2 gap-x-1 relative">
         <AnimatePresence mode="popLayout">
-          {allDays.map((day, i) => {
+          {allDays.map((day) => {
             const isCurrentMonth = isSameMonth(day, currentDate);
             const status = getDayStatus(day);
             const isTodayDay = isToday(day);

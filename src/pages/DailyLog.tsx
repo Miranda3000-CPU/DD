@@ -1,127 +1,96 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Activity, Save } from "lucide-react";
 import { toast } from "sonner";
 import { PageTransition } from "../components/layout/PageTransition";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { db, type DailyLogEntry } from "../services/db";
+import { db, DailyLogEntry } from "../services/db";
+import { HeartPulse, Save, CalendarDays } from "lucide-react";
 
-const todayIso = () => {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-};
-
-const choices = {
-  flowIntensity: ["Nenhum", "Leve", "Médio", "Intenso"],
-  painLevel: ["Nenhuma", "Leve", "Moderada", "Intensa"],
-  mood: ["Bem", "Tranquila", "Sensível", "Ansiosa", "Triste", "Irritada"],
-  energyLevel: ["Baixa", "Média", "Alta"],
-  sleepQuality: ["Ruim", "Regular", "Boa", "Ótima"],
-  cervicalMucus: ["Não observei", "Seco", "Pegajoso", "Cremoso", "Aquoso", "Elástico"]
-} as const;
-
-function ChoiceField({ label, value, options, onChange }: {
-  label: string; value: string; options: readonly string[]; onChange: (value: string) => void
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="w-full min-h-11 border border-input rounded-xl px-3 py-2 bg-background text-foreground">
-        <option value="">Não informar</option>
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
-    </div>
-  );
-}
+const symptomsList = ["Cólicas", "Dor de cabeça", "Inchaço", "Acne", "Sensibilidade mamária", "Cansaço", "Náusea", "Dor lombar", "Diarreia", "Constipação", "Desejo por alimentos", "Alteração de apetite", "Irritabilidade", "Ansiedade", "Tristeza", "Dificuldade de concentração", "Ondas de calor", "Seios doloridos", "Spotting", "Dor pélvica"];
 
 export default function DailyLogPage() {
-  const [date, setDate] = useState(todayIso());
-  const [form, setForm] = useState<Omit<DailyLogEntry, "id" | "date" | "uuid" | "createdAt" | "updatedAt">>({
-    flowIntensity: "", painLevel: "", symptoms: "", mood: "", energyLevel: "", sleepQuality: "", cervicalMucus: "", notes: ""
-  });
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [flow, setFlow] = useState("");
+  const [pain, setPain] = useState("0");
+  const [symptoms, setSymptoms] = useState<string[]>([]);
+  const [mood, setMood] = useState("");
+  const [energy, setEnergy] = useState("");
+  const [sleep, setSleep] = useState("");
+  const [mucus, setMucus] = useState("");
+  const [recentLogs, setRecentLogs] = useState<DailyLogEntry[]>([]);
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let active = true;
-    db.dailyLogs.where("date").equals(date).first().then((record) => {
+    db.dailyLogs.where("date").equals(date).first().then(async (entry) => {
       if (!active) return;
-      setForm({
-        flowIntensity: record?.flowIntensity ?? "", painLevel: record?.painLevel ?? "",
-        symptoms: record?.symptoms ?? "", mood: record?.mood ?? "",
-        energyLevel: record?.energyLevel ?? "", sleepQuality: record?.sleepQuality ?? "",
-        cervicalMucus: record?.cervicalMucus ?? "", notes: record?.notes ?? ""
-      });
-    }).catch(() => toast.error("Não foi possível carregar o registro local."));
+      setFlow(entry?.flowIntensity ?? "");
+      setPain(entry?.painLevel ?? "0");
+      setSymptoms(entry?.symptoms ? entry.symptoms.split("|").filter(Boolean) : []);
+      setMood(entry?.mood ?? "");
+      setEnergy(entry?.energyLevel ?? "");
+      setSleep(entry?.sleepQuality ?? "");
+      setMucus(entry?.cervicalMucus ?? "");
+      setNotes(entry?.notes ?? "");
+      setRecentLogs(await db.dailyLogs.orderBy("date").reverse().limit(7).toArray());
+    }).catch(() => toast.error("Não foi possível abrir o registro local."));
     return () => { active = false; };
   }, [date]);
 
-  const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const toggleSymptom = (symptom: string) => setSymptoms(old =>
+    old.includes(symptom) ? old.filter(s => s !== symptom) : [...old, symptom]
+  );
 
   const save = async () => {
     setLoading(true);
     try {
       const existing = await db.dailyLogs.where("date").equals(date).first();
-      const now = new Date().toISOString();
-      await db.dailyLogs.put({
-        ...existing,
-        ...form,
-        date,
-        uuid: existing?.uuid ?? crypto.randomUUID(),
-        createdAt: existing?.createdAt ?? now,
-        updatedAt: now
-      });
-      toast.success("Registro diário salvo neste dispositivo.");
+      const entry: DailyLogEntry = {
+        ...(existing?.id ? { id: existing.id } : {}),
+        date, flowIntensity: flow || undefined, painLevel: pain,
+        symptoms: symptoms.join("|"), mood: mood || undefined,
+        energyLevel: energy || undefined, sleepQuality: sleep || undefined,
+        cervicalMucus: mucus || undefined, notes, updatedAt: new Date().toISOString()
+      };
+      await db.dailyLogs.put(entry);
+      setRecentLogs(await db.dailyLogs.orderBy("date").reverse().limit(7).toArray());
+      toast.success("Registro diário salvo somente neste dispositivo.");
     } catch {
       toast.error("Não foi possível salvar. Verifique o espaço disponível no dispositivo.");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  return (
-    <PageTransition className="pb-28 pt-6 px-5 sm:px-6 max-w-xl mx-auto min-h-screen">
-      <header className="mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4"><Activity className="w-6 h-6" /></div>
-        <h1 className="text-2xl font-bold">Diário diário</h1>
-        <p className="text-muted-foreground mt-2">Registre como você está se sentindo. Os dados ficam no armazenamento local deste navegador.</p>
-      </header>
-
-      <Card className="rounded-2xl">
-        <CardContent className="p-5 space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="log-date">Data do registro</Label>
-            <Input id="log-date" type="date" value={date} max={todayIso()} onChange={(event) => setDate(event.target.value)} />
-            <p className="text-xs text-muted-foreground">{format(new Date(date + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: ptBR })}</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <ChoiceField label="Fluxo menstrual" value={form.flowIntensity ?? ""} options={choices.flowIntensity} onChange={(v) => set("flowIntensity", v)} />
-            <ChoiceField label="Dor ou cólica" value={form.painLevel ?? ""} options={choices.painLevel} onChange={(v) => set("painLevel", v)} />
-            <ChoiceField label="Humor" value={form.mood ?? ""} options={choices.mood} onChange={(v) => set("mood", v)} />
-            <ChoiceField label="Energia" value={form.energyLevel ?? ""} options={choices.energyLevel} onChange={(v) => set("energyLevel", v)} />
-            <ChoiceField label="Qualidade do sono" value={form.sleepQuality ?? ""} options={choices.sleepQuality} onChange={(v) => set("sleepQuality", v)} />
-            <ChoiceField label="Muco cervical (opcional)" value={form.cervicalMucus ?? ""} options={choices.cervicalMucus} onChange={(v) => set("cervicalMucus", v)} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="log-symptoms">Sintomas</Label>
-            <Input id="log-symptoms" value={form.symptoms ?? ""} onChange={(event) => set("symptoms", event.target.value)} placeholder="Ex.: inchaço, dor de cabeça..." />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="log-notes">Observações pessoais</Label>
-            <Textarea id="log-notes" value={form.notes ?? ""} onChange={(event) => set("notes", event.target.value)} placeholder="Anotações opcionais..." rows={3} />
-          </div>
-          <Button className="w-full rounded-xl" onClick={save} disabled={loading}>
-            <Save className="w-4 h-4 mr-2" />{loading ? "Salvando..." : "Salvar registro"}
-          </Button>
-        </CardContent>
-      </Card>
-      <p className="text-xs text-muted-foreground leading-relaxed mt-4">Este diário não diagnostica condições de saúde. Registros de sintomas podem ajudar você a conversar com um profissional, se desejar.</p>
-    </PageTransition>
-  );
+  return <PageTransition className="mx-auto min-h-screen max-w-md space-y-5 px-5 pb-28 pt-6">
+    <header>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Diário pessoal</p>
+      <h1 className="mt-2 text-2xl font-bold">Como você está?</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Registre sintomas e bem-estar. Os dados ficam no armazenamento local deste navegador.</p>
+    </header>
+    <Card className="rounded-3xl shadow-sm">
+      <CardContent className="space-y-5 p-5">
+        <div className="space-y-2"><Label htmlFor="log-date"><CalendarDays className="mr-2 inline h-4 w-4"/>Data</Label><Input id="log-date" type="date" value={date} onChange={e=>setDate(e.target.value)}/></div>
+        <div className="space-y-2"><Label>Fluxo menstrual</Label><div className="grid grid-cols-4 gap-2">{["Nenhum","Leve","Médio","Intenso"].map(v=><Button key={v} type="button" variant={flow===v?"default":"outline"} size="sm" className="rounded-xl px-1" onClick={()=>setFlow(flow===v?"":v)}>{v}</Button>)}</div></div>
+        <div className="space-y-2"><Label>Nível de dor (0 a 10)</Label><div className="flex items-center gap-3"><Input type="range" min="0" max="10" value={pain} onChange={e=>setPain(e.target.value)} className="p-0"/><span className="w-6 text-sm font-semibold">{pain}</span></div></div>
+        <div className="space-y-2"><Label><HeartPulse className="mr-2 inline h-4 w-4"/>Sintomas</Label><div className="flex flex-wrap gap-2">{symptomsList.map(s=><Button key={s} type="button" variant={symptoms.includes(s)?"default":"outline"} size="sm" className="rounded-full" onClick={()=>toggleSymptom(s)}>{s}</Button>)}</div></div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2"><Label>Humor</Label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" value={mood} onChange={e=>setMood(e.target.value)}><option value="">Não informado</option>{["Bem","Tranquila","Ansiosa","Triste","Irritada","Sensível"].map(v=><option key={v}>{v}</option>)}</select></div>
+          <div className="space-y-2"><Label>Energia</Label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" value={energy} onChange={e=>setEnergy(e.target.value)}><option value="">Não informado</option>{["Baixa","Moderada","Alta"].map(v=><option key={v}>{v}</option>)}</select></div>
+          <div className="space-y-2 sm:col-span-2"><Label>Sono</Label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" value={sleep} onChange={e=>setSleep(e.target.value)}><option value="">Não informado</option>{["Ruim","Regular","Bom","Muito bom"].map(v=><option key={v}>{v}</option>)}</select></div>
+        </div>
+        <div className="space-y-2"><Label>Muco cervical (opcional)</Label><select className="h-10 w-full rounded-xl border bg-background px-3 text-sm" value={mucus} onChange={e=>setMucus(e.target.value)}><option value="">Não informado</option>{["Seco ou ausente","Pegajoso","Cremoso","Aquoso","Transparente e elástico"].map(v=><option key={v}>{v}</option>)}</select><p className="text-xs text-muted-foreground">A observação é pessoal e não confirma ovulação nem fertilidade.</p></div>
+        <div className="space-y-2"><Label htmlFor="notes">Anotações pessoais</Label><Textarea id="notes" rows={4} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Como foi seu dia? (opcional)"/></div>
+        <Button className="w-full rounded-2xl" onClick={save} disabled={loading}><Save className="mr-2 h-4 w-4"/>{loading?"Salvando…":"Salvar registro"}</Button>
+      </CardContent>
+    </Card>
+    <section className="space-y-3">
+      <h2 className="text-lg font-semibold">Registros recentes</h2>
+      {recentLogs.length === 0 ? <p className="text-sm text-muted-foreground">Seus registros salvos aparecerão aqui.</p> : recentLogs.map(log => <Card key={log.date} className="rounded-2xl shadow-sm"><CardContent className="flex items-start justify-between gap-3 p-4"><div><p className="text-sm font-semibold">{format(new Date(log.date + "T12:00:00"), "dd 'de' MMMM", {locale: ptBR})}</p><p className="mt-1 text-xs text-muted-foreground">{[log.flowIntensity, log.mood, log.energyLevel].filter(Boolean).join(" · ") || "Sem detalhes resumidos"}</p><p className="mt-1 text-xs text-muted-foreground">{log.symptoms.split("|").filter(Boolean).join(", ")}</p></div><Button size="sm" variant="outline" className="rounded-xl" onClick={()=>setDate(log.date)}>Ver</Button></CardContent></Card>)}
+    </section>
+  </PageTransition>;
 }

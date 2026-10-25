@@ -12,7 +12,7 @@ import { differenceInDays, parseISO, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CycleEntry } from '../services/db';
 import { Card, CardContent } from './ui/card';
-import { Sparkles, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface CycleChartProps {
   cycles: CycleEntry[];
@@ -58,8 +58,7 @@ export function CycleChart({ cycles, avgCycleLength, prediction, predicting }: C
           </div>
           {prediction !== null && (
             <div className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-              <Sparkles className="w-3 h-3" />
-              <span>IA: {prediction}d</span>
+              <span>Estimativa: {prediction}d</span>
             </div>
           )}
         </div>
@@ -112,7 +111,7 @@ export function CycleChart({ cycles, avgCycleLength, prediction, predicting }: C
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
                 label={{
-                  value: `IA: ${prediction}d`,
+                  value: `Est.: ${prediction}d`,
                   position: 'insideBottomRight',
                   fontSize: 9,
                   fill: 'hsl(var(--primary))',
@@ -139,12 +138,12 @@ export function CycleChart({ cycles, avgCycleLength, prediction, predicting }: C
           {prediction !== null && (
             <div className="flex items-center gap-1.5 text-xs text-primary">
               <div className="w-5 border-t border-dashed border-primary" />
-              Previsão IA
+              Estimativa estatística
             </div>
           )}
           {predicting && (
             <div className="text-xs text-muted-foreground animate-pulse">
-              Treinando modelo...
+              Calculando estimativa...
             </div>
           )}
         </div>
@@ -152,7 +151,7 @@ export function CycleChart({ cycles, avgCycleLength, prediction, predicting }: C
         {prediction !== null && prediction !== avgCycleLength && (
           <div className="mt-3 pt-3 border-t border-border/50">
             <p className="text-xs text-muted-foreground leading-snug">
-              O modelo de IA prevê um ciclo de{' '}
+              A estimativa estatística indica um ciclo de{' '}
               <strong className="text-foreground">{prediction} dias</strong>, enquanto sua média
               histórica é de <strong className="text-foreground">{avgCycleLength} dias</strong> —
               diferença de{' '}

@@ -2,8 +2,6 @@ name: Validate DD web app
 
 on:
   pull_request:
-  push:
-    branches: [main, integration/academic-offline]
   workflow_dispatch:
 
 jobs:

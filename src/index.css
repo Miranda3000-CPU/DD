@@ -257,3 +257,142 @@
     inset: -1px;
   }
 }
+
+/*
+ * Soft UI refinement for Diário Dela
+ * Visual-only layer: keeps the existing component logic and local-first data model.
+ */
+:root {
+  --radius: 1.25rem;
+  --shadow-soft-ui:
+    10px 10px 24px hsl(350 28% 78% / 0.24),
+    -10px -10px 24px hsl(0 0% 100% / 0.92);
+  --shadow-soft-ui-inset:
+    inset 3px 3px 8px hsl(350 28% 78% / 0.18),
+    inset -3px -3px 8px hsl(0 0% 100% / 0.88);
+  --shadow-soft-ui-raised:
+    5px 5px 12px hsl(350 28% 78% / 0.22),
+    -5px -5px 12px hsl(0 0% 100% / 0.9);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse at 8% 0%, hsl(350 100% 96% / 0.82), transparent 38rem),
+    hsl(var(--background));
+  letter-spacing: -0.012em;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+button, [role="button"], a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, [role="button"], a, input, textarea, select):focus-visible {
+  outline: 3px solid hsl(var(--ring) / 0.45);
+  outline-offset: 3px;
+}
+
+/* Softer, layered surfaces without changing component markup. */
+:where([class*="rounded-xl"], [class*="rounded-2xl"], [class*="rounded-3xl"]):not(button):not([role="button"]) {
+  transition:
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+:where([class*="bg-card"], [class*="bg-white"], [class*="bg-background"])[class*="rounded-2xl"],
+:where([class*="bg-card"], [class*="bg-white"], [class*="bg-background"])[class*="rounded-3xl"] {
+  box-shadow: var(--shadow-soft-ui);
+  border-color: hsl(var(--border) / 0.72);
+}
+
+:where([class*="border"])[class*="rounded-2xl"]:not(button),
+:where([class*="border"])[class*="rounded-3xl"]:not(button) {
+  border-color: hsl(var(--border) / 0.72);
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  border-radius: 0.9rem;
+  background-color: hsl(var(--background) / 0.78);
+  box-shadow: var(--shadow-soft-ui-inset);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]), textarea, select):focus {
+  border-color: hsl(var(--primary) / 0.55);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+  outline: none;
+}
+
+:where(button, [role="button"]):not(:disabled) {
+  transition:
+    transform 150ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+:where(button, [role="button"]):not(:disabled):active {
+  transform: translateY(1px) scale(0.99);
+}
+
+:where(button, [role="button"]):disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+:where([class*="bg-primary"])[class*="rounded"] {
+  box-shadow:
+    0 5px 14px hsl(var(--primary) / 0.22),
+    inset 0 1px 0 hsl(0 0% 100% / 0.22);
+}
+
+:where([class*="bg-muted"], [class*="bg-secondary"])[class*="rounded"] {
+  border-color: transparent;
+}
+
+:where(nav, [role="navigation"]) {
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+:where([class*="fixed"][class*="bottom-0"]) {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
+}
+
+.dark body {
+  background:
+    radial-gradient(ellipse at 8% 0%, hsl(350 45% 19% / 0.35), transparent 38rem),
+    hsl(var(--background));
+}
+
+.dark :where([class*="bg-card"], [class*="bg-white"], [class*="bg-background"])[class*="rounded-2xl"],
+.dark :where([class*="bg-card"], [class*="bg-white"], [class*="bg-background"])[class*="rounded-3xl"] {
+  box-shadow:
+    8px 8px 20px hsl(0 0% 0% / 0.18),
+    -5px -5px 16px hsl(350 25% 24% / 0.12);
+  border-color: hsl(var(--border) / 0.82);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

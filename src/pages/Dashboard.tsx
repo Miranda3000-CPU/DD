@@ -139,6 +139,14 @@ export default function Dashboard() {
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">{forecast.confidence}</p>
               {forecast.attention.length > 0 && <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3">{forecast.attention.map(item => <p key={item} className="text-xs leading-relaxed">{item}</p>)}</div>}
+              {forecast.projections.length > 0 && <div className="space-y-2">
+                <h3 className="text-sm font-semibold">Próximos ciclos · 90 dias</h3>
+                {forecast.projections.map((item, index) => <div key={item.date.toISOString()} className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2">
+                  <span className="text-xs text-muted-foreground">Ciclo {index + 1}</span>
+                  <span className="text-sm font-medium">{format(item.date, "dd/MM/yyyy")}</span>
+                  <span className="text-xs text-muted-foreground">±{item.uncertaintyDays} d</span>
+                </div>)}
+              </div>}
               <p className="text-xs leading-relaxed text-muted-foreground">A previsão é aproximada, não confirma ovulação e não deve ser usada como método contraceptivo. Consulte o Guia para entender as limitações e as fontes.</p>
             </CardContent>
           </Card>

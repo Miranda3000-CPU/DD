@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCycle } from '../hooks/useCycle';
-import { useCyclePrediction } from '../hooks/useCyclePrediction';
+import { calculateCycleForecast } from '../utils/cycleEngine';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAppMetaContext } from '../context/AppMetaContext';
 import { CycleCard } from '../components/CycleCard';
@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Dashboard() {
   const { cycles, calculations, isLoading, logToday, settings, avgCycleLength, cycleDurations } = useCycle();
-  const { prediction, loading: predicting, error: predictionError } = useCyclePrediction(cycleDurations);
+  const forecast = calculateCycleForecast(cycles);
   const { userName } = useAppMetaContext();
   const [logModalOpen, setLogModalOpen] = useState(false);
 
@@ -123,80 +123,27 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── AI Prediction ────────────────────────────────────── */}
-        <AnimatePresence>
-          {!isLoading && (prediction !== null || predicting || predictionError) && (
-            <motion.div
-              key="ai-card"
-              initial={{ opacity: 0, y: 24, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.97 }}
-              transition={{ delay: 0.35, type: 'spring', stiffness: 260, damping: 20 }}
-              data-testid="card-ai-prediction"
-            >
-              <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
-                <div className="h-1 w-full bg-gradient-to-r from-primary via-purple-400 to-blue-400" />
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-purple-400/20 flex items-center justify-center shrink-0">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground leading-tight">
-                        Previsão Inteligente
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-tight">
-                        Modelo treinado no dispositivo
-                      </p>
-                    </div>
-                  </div>
+        {/* Statistical estimate with visible uncertainty and clinical caveat */}
+        {!isLoading && (
+          <Card className="rounded-3xl border-0 shadow-sm">
+            <CardContent className="space-y-4 p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Activity className="h-5 w-5"/></div>
+                <div><h2 className="font-semibold">Sua estimativa de ciclo</h2><p className="text-xs text-muted-foreground">Cálculo estatístico local, sem IA ou envio de dados</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Próxima menstruação</p><p className="mt-1 text-sm font-semibold">{forecast.nextPeriod ? format(forecast.nextPeriod, "dd 'de' MMM", {locale:ptBR}) : 'Registre um ciclo'}</p></div>
+                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Janela estimada</p><p className="mt-1 text-sm font-semibold">{forecast.windowStart && forecast.windowEnd ? `${format(forecast.windowStart,'dd/MM')} – ${format(forecast.windowEnd,'dd/MM')}` : 'Indisponível'}</p></div>
+                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Média histórica</p><p className="mt-1 text-sm font-semibold">${forecast.averageCycleDays} dias</p></div>
+                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Margem estimada</p><p className="mt-1 text-sm font-semibold">±${forecast.uncertaintyDays} dias</p></div>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">${forecast.confidence}</p>
+              ${forecast.attention.length ? `<div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3">${forecast.attention.map(item => `<p className="text-xs leading-relaxed">${item}</p>`).join('')}</div>` : ''}
+              <p className="text-xs leading-relaxed text-muted-foreground">A previsão é aproximada, não confirma ovulação e não deve ser usada como método contraceptivo. Consulte o Guia para entender as limitações e as fontes.</p>
+            </CardContent>
+          </Card>
+        )}
 
-                  {predicting ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm">Treinando modelo...</span>
-                    </div>
-                  ) : predictionError ? (
-                    <p className="text-sm text-muted-foreground">{predictionError}</p>
-                  ) : prediction !== null ? (
-                    <div className="flex items-end gap-3">
-                      <div>
-                        <span
-                          className="text-4xl font-bold text-foreground tabular-nums"
-                          data-testid="text-ai-prediction-value"
-                        >
-                          {prediction}
-                        </span>
-                        <span className="text-sm text-muted-foreground ml-1">dias</span>
-                      </div>
-                      {prediction !== avgCycleLength && (
-                        <div className="mb-1">
-                          <span
-                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                              prediction > avgCycleLength
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
-                            }`}
-                          >
-                            {prediction > avgCycleLength
-                              ? `+${prediction - avgCycleLength}d vs média`
-                              : `${prediction - avgCycleLength}d vs média`}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-
-                  <p className="text-xs text-muted-foreground mt-3 leading-snug">
-                    Baseado em regressão linear treinada localmente com{' '}
-                    {cycleDurations.length} ciclo{cycleDurations.length !== 1 ? 's' : ''} registrado
-                    {cycleDurations.length !== 1 ? 's' : ''}. Estimativa, não diagnóstico médico.
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* ── Nudge ────────────────────────────────────────────── */}
         <AnimatePresence>

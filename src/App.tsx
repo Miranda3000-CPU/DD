@@ -10,6 +10,8 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { AppMetaProvider, useAppMetaContext } from "@/context/AppMetaContext";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { useNotificationScheduler } from "@/hooks/useNotificationScheduler";
+import { useCycle } from "@/hooks/useCycle";
+import { isAndroidWebView, setAndroidNotificationsEnabled, setAndroidDailyReminder } from "@/native/androidBridge";
 
 import Dashboard from "@/pages/Dashboard";
 import CalendarPage from "@/pages/Calendar";
@@ -27,9 +29,31 @@ function AppShell() {
     onRegistered(r) { r && setInterval(() => r.update(), 60 * 60 * 1000); },
   });
 
-  // Daily 6 AM notification scheduler (enabled state is now managed by useCycle and passed down)
-  // This hook is now primarily for scheduling the local setTimeout fallback.
-  useNotificationScheduler(true); // Always enable local scheduling, its internal logic will check permissions/settings
+  // A mesma configuração alimenta o fallback web e o agendamento nativo Android.
+  const { settings: cycleSettings, isLoading: cycleSettingsLoading } = useCycle();
+  const dailyReminderActive =
+    !cycleSettingsLoading &&
+    cycleSettings.notificationsEnabled &&
+    Boolean(cycleSettings.dailyReminderEnabled);
+  useNotificationScheduler(dailyReminderActive);
+
+  useEffect(() => {
+    if (!isAndroidWebView() || cycleSettingsLoading) return;
+    void Promise.all([
+      setAndroidNotificationsEnabled(cycleSettings.notificationsEnabled),
+      setAndroidDailyReminder(
+        cycleSettings.notificationsEnabled && Boolean(cycleSettings.dailyReminderEnabled),
+        6,
+        0,
+      ),
+    ]).catch(() => {
+      // Native permission may still need to be granted from Settings.
+    });
+  }, [
+    cycleSettings.notificationsEnabled,
+    cycleSettings.dailyReminderEnabled,
+    cycleSettingsLoading,
+  ]);
 
   useEffect(() => {
     if (needRefresh) {

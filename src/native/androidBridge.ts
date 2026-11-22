@@ -106,6 +106,14 @@ export async function showAndroidNotification(title: string, body: string): Prom
   await requestAndroid("showNotification", { title, body });
 }
 
+export async function selectAndroidBackupFile(): Promise<File | null> {
+  if (!isAndroidWebView()) return null;
+  const selected = await requestAndroid<{ filename: string; base64: string }>("selectBackupFile", {}, 120_000);
+  const binary = atob(selected.base64);
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+  return new File([bytes], selected.filename || "diario-dela-backup", { type: "application/octet-stream" });
+}
+
 export async function downloadBackup(blob: Blob, filename: string): Promise<void> {
   if (!isAndroidWebView()) {
     const url = URL.createObjectURL(blob);

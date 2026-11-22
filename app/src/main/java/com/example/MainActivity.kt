@@ -381,7 +381,7 @@ class MainActivity : ComponentActivity() {
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED) &&
             androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()
 
-    private fun readLegacyData(): JSONObject {
+    private suspend fun readLegacyData(): JSONObject {
         val completed = getSharedPreferences(BRIDGE_PREFS, MODE_PRIVATE)
             .getBoolean(KEY_LEGACY_MIGRATION_COMPLETE, false)
         if (completed) {

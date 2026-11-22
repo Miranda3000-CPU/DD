@@ -47,20 +47,97 @@ export async function exportBackup(password: string): Promise<Blob> {
   return new Blob([envelope], { type: "application/octet-stream" });
 }
 
+const NATIVE_PLAIN_HEADER = "DDBACKUP_V1_PLAIN\n";
+const NATIVE_ENCRYPTED_HEADER = "DDBACKUP_V1_ENC\n";
+
+async function decodeNativeBackup(text: string, password: string): Promise<Payload> {
+  let json: string;
+  if (text.startsWith(NATIVE_PLAIN_HEADER)) {
+    json = text.slice(NATIVE_PLAIN_HEADER.length).trim();
+  } else if (text.startsWith(NATIVE_ENCRYPTED_HEADER)) {
+    if (!password) throw new Error("Este backup Android está protegido por senha.");
+    const bytes = Uint8Array.from(atob(text.slice(NATIVE_ENCRYPTED_HEADER.length).trim()), c => c.charCodeAt(0));
+    if (bytes.length < 28) throw new Error("Backup Android inválido ou incompleto.");
+    const salt = bytes.slice(0, 16);
+    const iv = bytes.slice(16, 28);
+    const ciphertext = bytes.slice(28);
+    const material = await crypto.subtle.importKey("raw", toArrayBuffer(new TextEncoder().encode(password)), "PBKDF2", false, ["deriveKey"]);
+    const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: toArrayBuffer(salt), iterations: 65536, hash: "SHA-256" }, material, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    try {
+      json = new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: toArrayBuffer(iv) }, key, toArrayBuffer(ciphertext)));
+    } catch {
+      throw new Error("Senha incorreta ou backup Android danificado.");
+    }
+  } else {
+    // Compatibility with older native backups containing raw JSON.
+    json = text.trim();
+  }
+
+  const native = JSON.parse(json) as {
+    formatVersion?: number; cycles?: Array<Record<string, unknown>>; dailyLogs?: Array<Record<string, unknown>>;
+    preferences?: Record<string, string>; userName?: string; exportedAtEpochMilli?: number;
+  };
+  if (!Array.isArray(native.cycles) || !Array.isArray(native.dailyLogs)) throw new Error("Estrutura do backup Android inválida.");
+  const dateFromEpochDay = (value: unknown) => new Date(Number(value) * 86400000).toISOString().slice(0, 10);
+  const dateTime = (value: unknown) => new Date(Number(value || Date.now())).toISOString();
+  const cycles = native.cycles.map(item => ({
+    startDate: dateFromEpochDay(item.startDateEpochDay),
+    periodDurationDays: Number(item.periodLengthDays ?? 5),
+    flowIntensity: String(item.flowIntensity ?? "Médio"),
+    symptoms: String(item.symptoms ?? ""),
+    notes: String(item.notes ?? ""),
+    createdAt: dateTime(item.createdAtEpochMilli),
+    updatedAt: dateTime(item.updatedAtEpochMilli),
+    legacyUuid: String(item.uuid ?? ""),
+  }));
+  const dailyLogs = native.dailyLogs.map(item => ({
+    date: dateFromEpochDay(item.dateEpochDay),
+    flowIntensity: item.flowIntensity == null ? undefined : String(item.flowIntensity),
+    painLevel: item.painLevel == null ? undefined : String(item.painLevel),
+    symptoms: String(item.symptoms ?? ""),
+    mood: item.mood == null ? undefined : String(item.mood),
+    energyLevel: item.energyLevel == null ? undefined : String(item.energyLevel),
+    sleepQuality: item.sleepQuality == null ? undefined : String(item.sleepQuality),
+    cervicalMucus: item.cervicalMucus == null ? undefined : String(item.cervicalMucus),
+    notes: String(item.notes ?? ""),
+    updatedAt: dateTime(item.updatedAtEpochMilli),
+    legacyUuid: String(item.uuid ?? ""),
+  }));
+  const durations = cycles.map(c => c.periodDurationDays).filter(n => Number.isFinite(n) && n >= 1 && n <= 15).sort((a,b)=>a-b);
+  const preferences = native.preferences ?? {};
+  return {
+    formatVersion: 1,
+    exportedAt: dateTime(native.exportedAtEpochMilli),
+    cycles,
+    dailyLogs,
+    settings: [{
+      id: 1,
+      cycleLength: 28,
+      periodDuration: durations.length ? durations[Math.floor(durations.length / 2)] : 5,
+      notificationsEnabled: preferences.notifications_enabled === "true",
+      dailyReminderEnabled: preferences.notify_daily_reminder === "true",
+    }],
+  };
+}
+
 export async function importBackup(file: File, password: string): Promise<{ cyclesAdded: number; logsAdded: number }> {
   const text = await file.text();
-  if (!text.startsWith(HEADER)) throw new Error("Arquivo não é um backup DD Web compatível.");
-  const envelope = JSON.parse(text.slice(HEADER.length)) as { salt: string; iv: string; ciphertext: string };
-  const key = await deriveKey(password, base64ToBytes(envelope.salt));
-  let decoded: string;
-  try {
-    decoded = new TextDecoder().decode(await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: toArrayBuffer(base64ToBytes(envelope.iv)) }, key, toArrayBuffer(base64ToBytes(envelope.ciphertext))
-    ));
-  } catch {
-    throw new Error("Senha incorreta ou arquivo danificado.");
+  let payload: Payload;
+  if (text.startsWith(HEADER)) {
+    const envelope = JSON.parse(text.slice(HEADER.length)) as { salt: string; iv: string; ciphertext: string };
+    const key = await deriveKey(password, base64ToBytes(envelope.salt));
+    let decoded: string;
+    try {
+      decoded = new TextDecoder().decode(await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(base64ToBytes(envelope.iv)) }, key, toArrayBuffer(base64ToBytes(envelope.ciphertext))
+      ));
+    } catch {
+      throw new Error("Senha incorreta ou arquivo danificado.");
+    }
+    payload = JSON.parse(decoded) as Payload;
+  } else {
+    payload = await decodeNativeBackup(text, password);
   }
-  const payload = JSON.parse(decoded) as Payload;
   if (payload.formatVersion !== 1 || !Array.isArray(payload.cycles) || !Array.isArray(payload.dailyLogs)) {
     throw new Error("Estrutura de backup inválida ou versão não suportada.");
   }

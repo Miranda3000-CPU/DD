@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X, Share, MoreHorizontal } from 'lucide-react';
 import { Button } from './ui/button';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { isAndroidWebView } from '../native/androidBridge';
 
 /**
  * PWA install banner — adapts to platform:
@@ -12,6 +13,9 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 export function InstallPrompt() {
   const { isInstallable, triggerInstall, showIOSGuide, dismiss } = usePWAInstall();
   const [iosExpanded, setIosExpanded] = useState(false);
+
+  // The APK already has an installed native shell; only browsers need the PWA prompt.
+  if (isAndroidWebView()) return null;
 
   return (
     <AnimatePresence>

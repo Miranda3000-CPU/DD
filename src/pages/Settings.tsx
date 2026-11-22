@@ -20,13 +20,23 @@ import {
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { useNotificationScheduler } from '../hooks/useNotificationScheduler';
+import { markSentToday, sendDailyReminderNow, updatePeriodicSync } from '../hooks/useNotificationScheduler';
+import {
+  isAndroidWebView,
+  requestNotificationPermission,
+  setAndroidNotificationsEnabled,
+  setAndroidDailyReminder,
+  showAndroidNotification,
+  scheduleAndroidCyclePrediction,
+  downloadBackup,
+} from '../native/androidBridge';
 import { exportBackup, importBackup } from '../services/backup';
 import { Download, Upload, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDate } from '../utils/dateUtils';
 
 export default function SettingsPage() {
-  const { settings, updateSettings, clearAllData, isLoading } = useCycle();
+  const { settings, calculations, updateSettings, clearAllData, isLoading } = useCycle();
   const [localSettings, setLocalSettings] = useState(settings);
   const { theme, setTheme } = useTheme();
   const [dailyNotif, setDailyNotif] = useState(settings.dailyReminderEnabled || false);
@@ -54,40 +64,57 @@ export default function SettingsPage() {
 
   /** Toggle global notifications. If turning off, also disable daily reminder. */
   const handleNotificationsToggle = async (enabled: boolean) => {
-    if (enabled && 'Notification' in window) {
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') {
-        setLocalSettings((prev) => ({ ...prev, notificationsEnabled: false }));
-        return;
+    if (enabled && !(await requestNotificationPermission())) {
+      setLocalSettings((prev) => ({ ...prev, notificationsEnabled: false }));
+      return;
+    }
+
+    try {
+      await setAndroidNotificationsEnabled(enabled);
+      if (isAndroidWebView() && enabled) {
+        await scheduleAndroidCyclePrediction(
+          calculations ? formatDate(calculations.nextPeriodDate) : null,
+        );
       }
+      if (!enabled && dailyNotif) {
+        await setAndroidDailyReminder(false);
+        updateSettings({ dailyReminderEnabled: false });
+        setDailyNotif(false);
+      }
+      updateSettings({ notificationsEnabled: enabled });
+      setLocalSettings((prev) => ({ ...prev, notificationsEnabled: enabled }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar as notificações.");
     }
-
-    if (!enabled && dailyNotif) {
-      // Turn off daily reminder when notifications are disabled
-      updateSettings({ dailyReminderEnabled: false });
-      setDailyNotif(false);
-    }
-
-    updateSettings({ notificationsEnabled: enabled });
-    setLocalSettings((prev) => ({ ...prev, notificationsEnabled: enabled }));
   };
 
   /** Toggle daily 6 AM reminder. Fires a first notification immediately on activation. */
-  const { updatePeriodicSync, sendViaSW, markSentToday } = useNotificationScheduler(true); // Pass true as it's always enabled now
-
   const handleDailyNotifToggle = async (enabled: boolean) => {
-    if (enabled) {
-      if ('Notification' in window && Notification.permission !== 'granted') {
-        const perm = await Notification.requestPermission();
-        if (perm !== 'granted') return;
+    try {
+      if (enabled) {
+        if (!(await requestNotificationPermission())) return;
+
+        if (isAndroidWebView()) {
+          await setAndroidDailyReminder(true, 6, 0);
+          await showAndroidNotification(
+            "DD • Diário Dela",
+            "Lembrete diário ativado. Você pode alterar essa opção nas configurações.",
+          );
+        } else {
+          markSentToday();
+          await sendDailyReminderNow();
+          await updatePeriodicSync(true);
+        }
+      } else {
+        if (isAndroidWebView()) await setAndroidDailyReminder(false);
+        else await updatePeriodicSync(false);
       }
-      // Fire immediately as first confirmation
-      markSentToday();
-      sendViaSW();
+
+      updateSettings({ dailyReminderEnabled: enabled });
+      setDailyNotif(enabled);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível configurar o lembrete.");
     }
-    updateSettings({ dailyReminderEnabled: enabled });
-    setDailyNotif(enabled);
-    updatePeriodicSync(enabled);
   };
 
   const dailyDisabled = !localSettings.notificationsEnabled;
@@ -258,7 +285,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={async()=>{
                   setBackupBusy(true);
-                  try { const blob = await exportBackup(backupPassword); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "diario-dela.ddwebbackup"; a.click(); URL.revokeObjectURL(url); toast.success("Backup criptografado exportado."); }
+                  try { const blob = await exportBackup(backupPassword); await downloadBackup(blob, "diario-dela.ddwebbackup"); toast.success("Backup criptografado exportado."); }
                   catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao exportar backup."); }
                   finally { setBackupBusy(false); }
                 }}><Download className="mr-2 h-4 w-4"/>Exportar backup</Button>

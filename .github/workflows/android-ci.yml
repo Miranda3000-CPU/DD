@@ -40,6 +40,9 @@ jobs:
             echo "::warning::Stable Android signing secrets are not configured; this APK cannot update installs signed by previous ephemeral keys."
             keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US'
           fi
+          echo "DEBUG_STORE_PASSWORD=${DEBUG_STORE_PASSWORD:-android}" >> "$GITHUB_ENV"
+          echo "DEBUG_KEY_ALIAS=${DEBUG_KEY_ALIAS:-androiddebugkey}" >> "$GITHUB_ENV"
+          echo "DEBUG_KEY_PASSWORD=${DEBUG_KEY_PASSWORD:-android}" >> "$GITHUB_ENV"
       - name: Compile and assemble Debug APK
         run: ./gradlew --no-daemon --no-configuration-cache assembleDebug
       - name: Run unit tests (retry transient repository failures)

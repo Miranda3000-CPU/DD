@@ -27,14 +27,16 @@ import {
   setAndroidNotificationsEnabled,
   setAndroidDailyReminder,
   showAndroidNotification,
+  scheduleAndroidCyclePrediction,
   downloadBackup,
 } from '../native/androidBridge';
 import { exportBackup, importBackup } from '../services/backup';
 import { Download, Upload, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatDate } from '../utils/dateUtils';
 
 export default function SettingsPage() {
-  const { settings, updateSettings, clearAllData, isLoading } = useCycle();
+  const { settings, calculations, updateSettings, clearAllData, isLoading } = useCycle();
   const [localSettings, setLocalSettings] = useState(settings);
   const { theme, setTheme } = useTheme();
   const [dailyNotif, setDailyNotif] = useState(settings.dailyReminderEnabled || false);
@@ -69,6 +71,11 @@ export default function SettingsPage() {
 
     try {
       await setAndroidNotificationsEnabled(enabled);
+      if (isAndroidWebView() && enabled) {
+        await scheduleAndroidCyclePrediction(
+          calculations ? formatDate(calculations.nextPeriodDate) : null,
+        );
+      }
       if (!enabled && dailyNotif) {
         await setAndroidDailyReminder(false);
         updateSettings({ dailyReminderEnabled: false });

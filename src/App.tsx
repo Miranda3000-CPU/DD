@@ -11,7 +11,8 @@ import { AppMetaProvider, useAppMetaContext } from "@/context/AppMetaContext";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { useNotificationScheduler } from "@/hooks/useNotificationScheduler";
 import { useCycle } from "@/hooks/useCycle";
-import { isAndroidWebView, setAndroidNotificationsEnabled, setAndroidDailyReminder } from "@/native/androidBridge";
+import { isAndroidWebView, setAndroidNotificationsEnabled, setAndroidDailyReminder, scheduleAndroidCyclePrediction } from "@/native/androidBridge";
+import { formatDate } from "@/utils/dateUtils";
 
 import Dashboard from "@/pages/Dashboard";
 import CalendarPage from "@/pages/Calendar";
@@ -30,7 +31,7 @@ function AppShell() {
   });
 
   // A mesma configuração alimenta o fallback web e o agendamento nativo Android.
-  const { settings: cycleSettings, isLoading: cycleSettingsLoading } = useCycle();
+  const { settings: cycleSettings, calculations, isLoading: cycleSettingsLoading } = useCycle();
   const dailyReminderActive =
     !cycleSettingsLoading &&
     cycleSettings.notificationsEnabled &&
@@ -46,6 +47,11 @@ function AppShell() {
         6,
         0,
       ),
+      scheduleAndroidCyclePrediction(
+        cycleSettings.notificationsEnabled && calculations
+          ? formatDate(calculations.nextPeriodDate)
+          : null,
+      ),
     ]).catch(() => {
       // Native permission may still need to be granted from Settings.
     });
@@ -53,6 +59,7 @@ function AppShell() {
     cycleSettings.notificationsEnabled,
     cycleSettings.dailyReminderEnabled,
     cycleSettingsLoading,
+    calculations?.nextPeriodDate?.getTime(),
   ]);
 
   useEffect(() => {

@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var pendingPermissionReply: PendingReply? = null
     private var pendingSave: PendingSave? = null
+    private var pendingBackupImport: PendingReply? = null
 
     private data class PendingReply(
         val id: String,
@@ -76,6 +77,35 @@ class MainActivity : ComponentActivity() {
         fileChooserCallback = null
     }
 
+    private val nativeBackupPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val pending = pendingBackupImport ?: return@registerForActivityResult
+        pendingBackupImport = null
+        if (uri == null) {
+            reply(pending.proxy, pending.id, ok = false, error = "Importação cancelada.")
+            return@registerForActivityResult
+        }
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: error("Não foi possível ler o arquivo selecionado.")
+                    val name = contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                        val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (cursor.moveToFirst() && index >= 0) cursor.getString(index) else "diario-dela-backup"
+                    } ?: "diario-dela-backup"
+                    JSONObject()
+                        .put("filename", name)
+                        .put("base64", android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP))
+                }
+            }
+            result.onSuccess { data ->
+                reply(pending.proxy, pending.id, ok = true, data = data)
+            }.onFailure { error ->
+                reply(pending.proxy, pending.id, ok = false, error = error.message ?: "Falha ao ler backup.")
+            }
+        }
+    }
+
     private val createBackupFile = registerForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
@@ -89,8 +119,9 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    contentResolver.openOutputStream(uri)?.use { it.write(pending.bytes) }
-                        ?: error("Não foi possível abrir o destino do arquivo.")
+                    val output = contentResolver.openOutputStream(uri)
+                ?: error("Não foi possível abrir o destino do arquivo.")
+            output.use { it.write(pending.bytes) }
                 }
             }
             result.onSuccess {
@@ -351,6 +382,18 @@ class MainActivity : ComponentActivity() {
                 }
                 NotificationHelper.sendTestNotification(this)
                 reply(proxy, id, ok = true, data = JSONObject().put("shown", true))
+            }
+
+            "selectBackupFile" -> {
+                if (pendingBackupImport != null) {
+                    reply(proxy, id, ok = false, error = "Já existe uma seleção de arquivo em andamento.")
+                    return
+                }
+                pendingBackupImport = PendingReply(id, proxy)
+                runCatching { nativeBackupPicker.launch(arrayOf("*/*")) }.onFailure {
+                    pendingBackupImport = null
+                    reply(proxy, id, ok = false, error = "Não foi possível abrir o seletor de backup.")
+                }
             }
 
             "saveFile" -> saveNativeFile(id, payload, proxy)

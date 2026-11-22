@@ -13,8 +13,8 @@ android {
     applicationId = "com.aistudio.ciclo.menstrual"
     minSdk = 26
     targetSdk = 36
-    versionCode = 6
-    versionName = "6.0"
+    versionCode = 7
+    versionName = "6.1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -22,9 +22,9 @@ android {
   signingConfigs {
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
-      storePassword = "android"
-      keyAlias = "androiddebugkey"
-      keyPassword = "android"
+      storePassword = System.getenv("DEBUG_STORE_PASSWORD") ?: "android"
+      keyAlias = System.getenv("DEBUG_KEY_ALIAS") ?: "androiddebugkey"
+      keyPassword = System.getenv("DEBUG_KEY_PASSWORD") ?: "android"
     }
     create("release") {
       val customPath = System.getenv("KEYSTORE_PATH")

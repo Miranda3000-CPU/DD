@@ -29,6 +29,8 @@ import {
   showAndroidNotification,
   scheduleAndroidCyclePrediction,
   downloadBackup,
+  isAndroidWebView,
+  selectAndroidBackupFile,
 } from '../native/androidBridge';
 import { exportBackup, importBackup } from '../services/backup';
 import { Download, Upload, ShieldCheck } from 'lucide-react';
@@ -289,13 +291,31 @@ export default function SettingsPage() {
                   catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao exportar backup."); }
                   finally { setBackupBusy(false); }
                 }}><Download className="mr-2 h-4 w-4"/>Exportar backup</Button>
-                <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={()=>{
-                  const picker = document.createElement("input"); picker.type = "file"; picker.accept = ".ddwebbackup,application/octet-stream";
-                  picker.onchange = async () => { const file = picker.files?.[0]; if (!file) return; setBackupBusy(true);
-                    try { const result = await importBackup(file, backupPassword); toast.success("Importado: " + result.cyclesAdded + " ciclos e " + result.logsAdded + " registros diários novos. Dados locais existentes preservados."); window.location.reload(); }
-                    catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao importar backup."); }
-                    finally { setBackupBusy(false); }
-                  }; picker.click();
+                <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={async()=>{
+                  setBackupBusy(true);
+                  try {
+                    let file: File | null = null;
+                    if (isAndroidWebView()) {
+                      file = await selectAndroidBackupFile();
+                    } else {
+                      file = await new Promise<File | null>((resolve) => {
+                        const picker = document.createElement("input");
+                        picker.type = "file";
+                        picker.accept = ".ddwebbackup,application/octet-stream";
+                        picker.onchange = () => resolve(picker.files?.[0] ?? null);
+                        picker.oncancel = () => resolve(null);
+                        picker.click();
+                      });
+                    }
+                    if (!file) { toast.info("Nenhum arquivo selecionado."); return; }
+                    const result = await importBackup(file, backupPassword);
+                    toast.success("Importado: " + result.cyclesAdded + " ciclos e " + result.logsAdded + " registros diários novos. Dados locais existentes preservados.");
+                    window.location.reload();
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Falha ao importar backup.");
+                  } finally {
+                    setBackupBusy(false);
+                  }
                 }}><Upload className="mr-2 h-4 w-4"/>Importar backup</Button>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">A importação mescla registros por data e não apaga dados locais. O backup web usa formato próprio e não é compatível diretamente com o arquivo Android .ddbackup.</p>

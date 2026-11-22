@@ -24,6 +24,7 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import androidx.lifecycle.lifecycleScope
 import com.example.data.AppDatabase
+import com.example.notification.CyclePredictionScheduler
 import com.example.notification.DailyReminderScheduler
 import com.example.notification.NotificationHelper
 import com.example.util.UserPreferencesManager
@@ -294,6 +295,7 @@ class MainActivity : ComponentActivity() {
                 if (!enabled) {
                     UserPreferencesManager.setNotifyDailyReminder(this, false)
                     DailyReminderScheduler.cancel(this)
+                    CyclePredictionScheduler.cancel(this)
                 }
                 reply(proxy, id, ok = true, data = JSONObject().put("enabled", enabled))
             }
@@ -310,6 +312,21 @@ class MainActivity : ComponentActivity() {
                     DailyReminderScheduler.cancel(this)
                 }
                 reply(proxy, id, ok = true, data = JSONObject().put("enabled", enabled))
+            }
+
+            "scheduleCyclePrediction" -> {
+                val dateText = payload.optString("nextPeriodDate").takeIf { it.isNotBlank() }
+                val nextPeriodDate = if (dateText == null) {
+                    null
+                } else {
+                    runCatching { LocalDate.parse(dateText) }.getOrNull()
+                }
+                if (dateText != null && nextPeriodDate == null) {
+                    reply(proxy, id, ok = false, error = "Data de previsão inválida.")
+                    return
+                }
+                CyclePredictionScheduler.schedule(this, nextPeriodDate)
+                reply(proxy, id, ok = true, data = JSONObject().put("scheduled", nextPeriodDate != null))
             }
 
             "showNotification" -> {

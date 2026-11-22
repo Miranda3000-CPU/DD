@@ -10,6 +10,8 @@ export interface CycleEntry {
   symptoms?: string;
   notes?: string;
   updatedAt?: string;
+  /** UUID preserved from the previous native Room database during migration. */
+  legacyUuid?: string;
 }
 
 export interface DailyLogEntry {
@@ -24,6 +26,8 @@ export interface DailyLogEntry {
   cervicalMucus?: string;
   notes: string;
   updatedAt: string;
+  /** UUID preserved from the previous native Room database during migration. */
+  legacyUuid?: string;
 }
 
 export interface AppSettings {

@@ -62,7 +62,7 @@ object CyclePredictionScheduler {
             .toEpochMilli()
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val pendingIntent = createPendingIntent(context, PendingIntent.FLAG_UPDATE_CURRENT)
+        val pendingIntent = createPendingIntent(context, PendingIntent.FLAG_UPDATE_CURRENT) ?: return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setAndAllowWhileIdle(

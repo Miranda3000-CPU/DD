@@ -344,6 +344,15 @@ class MainActivity : ComponentActivity() {
                 reply(proxy, id, ok = true, data = JSONObject().put("shown", true))
             }
 
+            "testNotification" -> {
+                if (!areNotificationsAvailable()) {
+                    reply(proxy, id, ok = false, error = "Permita notificações nas configurações do Android.")
+                    return
+                }
+                NotificationHelper.sendTestNotification(this)
+                reply(proxy, id, ok = true, data = JSONObject().put("shown", true))
+            }
+
             "saveFile" -> saveNativeFile(id, payload, proxy)
 
             else -> reply(proxy, id, ok = false, error = "Recurso nativo não reconhecido.")

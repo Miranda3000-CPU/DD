@@ -23,5 +23,17 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Run unit tests and assemble APK
-        run: ./gradlew --no-daemon testDebugUnitTest assembleDebug
+      - name: Compile and assemble Debug APK
+        run: ./gradlew --no-daemon --no-configuration-cache assembleDebug
+      - name: Run unit tests (retry transient repository failures)
+        run: |
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon --no-configuration-cache testDebugUnitTest; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Gradle test dependency download failed; retrying ($attempt/3)."
+              sleep $((attempt * 15))
+            fi
+          done
+          exit 1

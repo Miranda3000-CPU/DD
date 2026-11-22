@@ -70,6 +70,7 @@ class DailyReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             DailyReminderScheduler.rescheduleFromPreferences(context)
+            CyclePredictionScheduler.rescheduleFromPreferences(context)
             return
         }
         if (!DailyReminderScheduler.isDailyReminderAction(intent)) return

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { CycleCalculations } from "../utils/dateUtils";
 import {
   isAndroidWebView,
-  requestNotificationPermission,
   showAndroidNotification,
 } from "../native/androidBridge";
 
@@ -19,7 +18,8 @@ function localDateKey(): string {
 export function useNotifications(calculations: CycleCalculations | null, enabled: boolean) {
   /**
    * Notificações em primeiro plano.
-   * O APK usa o sistema de notificações Android; navegador/PWA usa a Notification API.
+   * A permissão é solicitada explicitamente em Configurações, não na montagem
+   * automática da tela. Aqui somente notificamos quando ela já foi concedida.
    */
   useEffect(() => {
     if (!enabled || !calculations) return;
@@ -28,26 +28,26 @@ export function useNotifications(calculations: CycleCalculations | null, enabled
       const today = localDateKey();
       if (localStorage.getItem("lastNotificationCheck") === today) return;
 
-      const granted = await requestNotificationPermission();
-      if (!granted) return;
+      const message = `Sua próxima menstruação está prevista para daqui a ${calculations.daysUntilNextPeriod} dias. Abra o Diário Dela para conferir.`;
+      if (calculations.daysUntilNextPeriod < 0 || calculations.daysUntilNextPeriod > 3) return;
 
-      if (calculations.daysUntilNextPeriod <= 3 && calculations.daysUntilNextPeriod >= 0) {
-        const message = `Sua próxima menstruação está prevista para daqui a ${calculations.daysUntilNextPeriod} dias. Abra o Diário Dela para conferir.`;
-        if (isAndroidWebView()) {
-          await showAndroidNotification("DD • Diário Dela", message);
-        } else if ("Notification" in window && Notification.permission === "granted") {
-          new Notification("DD", {
-            body: message,
-            icon: "/pwa-192x192.svg",
-          });
-        }
+      if (isAndroidWebView()) {
+        await showAndroidNotification("DD • Diário Dela", message);
+        localStorage.setItem("lastNotificationCheck", today);
+        return;
       }
 
-      localStorage.setItem("lastNotificationCheck", today);
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("DD", {
+          body: message,
+          icon: "/pwa-192x192.svg",
+        });
+        localStorage.setItem("lastNotificationCheck", today);
+      }
     };
 
     void checkAndNotify().catch(() => {
-      // A indisponibilidade do recurso de notificação não deve interromper a interface.
+      // Permissão negada ou indisponibilidade de notificação não interrompe a interface.
     });
   }, [calculations, enabled]);
 

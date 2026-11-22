@@ -21,5 +21,7 @@ jobs:
           cache: gradle
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Run unit tests and assemble APK
         run: ./gradlew --no-daemon testDebugUnitTest assembleDebug

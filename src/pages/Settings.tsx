@@ -283,14 +283,16 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">Proteja seus ciclos, registros diários e configurações com uma senha. Guarde o arquivo e a senha em local seguro.</p>
               <div className="space-y-2"><Label htmlFor="backup-password">Senha do backup (mínimo 10 caracteres)</Label><Input id="backup-password" type="password" autoComplete="new-password" value={backupPassword} onChange={e=>setBackupPassword(e.target.value)} placeholder="Crie uma senha forte"/></div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={async()=>{
+                <Button variant="outline" className="rounded-xl" disabled={backupBusy} onClick={async()=>{
+                  if (backupPassword.length < 10) { toast.error("Defina uma senha com pelo menos 10 caracteres."); return; }
                   setBackupBusy(true);
                   try { const blob = await exportBackup(backupPassword); await downloadBackup(blob, "diario-dela.ddwebbackup"); toast.success("Backup criptografado exportado."); }
                   catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao exportar backup."); }
                   finally { setBackupBusy(false); }
                 }}><Download className="mr-2 h-4 w-4"/>Exportar backup</Button>
-                <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={()=>{
-                  const picker = document.createElement("input"); picker.type = "file"; picker.accept = ".ddwebbackup,application/octet-stream";
+                <Button variant="outline" className="rounded-xl" disabled={backupBusy} onClick={()=>{
+                  if (backupPassword.length < 10) { toast.error("Informe a senha do backup (mínimo de 10 caracteres)."); return; }
+                  const picker = document.createElement("input"); picker.type = "file"; picker.accept = ".ddwebbackup,.ddbackup,application/octet-stream";
                   picker.onchange = async () => { const file = picker.files?.[0]; if (!file) return; setBackupBusy(true);
                     try { const result = await importBackup(file, backupPassword); toast.success("Importado: " + result.cyclesAdded + " ciclos e " + result.logsAdded + " registros diários novos. Dados locais existentes preservados."); window.location.reload(); }
                     catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao importar backup."); }
@@ -298,7 +300,7 @@ export default function SettingsPage() {
                   }; picker.click();
                 }}><Upload className="mr-2 h-4 w-4"/>Importar backup</Button>
               </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">A importação mescla registros por data e não apaga dados locais. O backup web usa formato próprio e não é compatível diretamente com o arquivo Android .ddbackup.</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">Use uma senha de pelo menos 10 caracteres. No Android, Exportar abre o seletor para salvar; Importar abre o seletor de arquivos. A versão web aceita backups .ddwebbackup.</p>
             </CardContent>
           </Card>
           {/* ── Danger zone ────────────────────────────────────── */}

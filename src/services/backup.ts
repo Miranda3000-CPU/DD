@@ -169,11 +169,14 @@ export async function importBackup(file: File, password: string): Promise<{ cycl
     // Restore preferences only if this device has none; never overwrite local settings.
     if (Array.isArray(payload.settings) && payload.settings.length > 0) {
       const localSettings = await db.settings.toArray();
-      if (localSettings.length === 0) {
+      const current = localSettings[0];
+      const isDefaultSettings = !current ||
+        (current.cycleLength === 28 && current.periodDuration === 5 &&
+          !current.notificationsEnabled && !current.dailyReminderEnabled);
+      if (isDefaultSettings) {
         for (const setting of payload.settings) {
-          const copy = { ...setting };
-          delete copy.id;
-          await db.settings.add(copy);
+          const copy = { ...setting, id: 1 };
+          await db.settings.put(copy);
         }
       }
     }

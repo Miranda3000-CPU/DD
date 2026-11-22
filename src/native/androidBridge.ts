@@ -106,6 +106,23 @@ export async function showAndroidNotification(title: string, body: string): Prom
   await requestAndroid("showNotification", { title, body });
 }
 
+
+export async function testNotification(): Promise<void> {
+  if (isAndroidWebView()) {
+    await requestAndroid<{ shown: boolean }>("testNotification");
+    return;
+  }
+  if (!("Notification" in window)) throw new Error("Este navegador não suporta notificações.");
+  const permission = Notification.permission === "granted"
+    ? "granted"
+    : await Notification.requestPermission();
+  if (permission !== "granted") throw new Error("Permissão para notificações não concedida.");
+  new Notification("DD • Diário Dela 🌷", {
+    body: "Esta é uma notificação de teste. A integração está funcionando.",
+    icon: "/pwa-192x192.svg",
+  });
+}
+
 export async function downloadBackup(blob: Blob, filename: string): Promise<void> {
   if (!isAndroidWebView()) {
     const url = URL.createObjectURL(blob);

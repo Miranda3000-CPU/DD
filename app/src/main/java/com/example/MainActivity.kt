@@ -175,7 +175,10 @@ class MainActivity : ComponentActivity() {
                 request: WebResourceRequest?,
             ): Boolean {
                 val uri = request?.url ?: return true
-                if (uri.scheme == "https" && uri.host.equals(APP_HOST, ignoreCase = true)) {
+                if (uri.scheme == "https" &&
+                    uri.host.equals(APP_HOST, ignoreCase = true) &&
+                    (uri.port == -1 || uri.port == 443)
+                ) {
                     return false
                 }
                 openExternalLink(uri)
@@ -239,7 +242,8 @@ class MainActivity : ComponentActivity() {
         ) { _, message, sourceOrigin, isMainFrame, replyProxy ->
             if (!isMainFrame ||
                 sourceOrigin.scheme != "https" ||
-                !sourceOrigin.host.equals(APP_HOST, ignoreCase = true)
+                !sourceOrigin.host.equals(APP_HOST, ignoreCase = true) ||
+                (sourceOrigin.port != -1 && sourceOrigin.port != 443)
             ) {
                 return@addWebMessageListener
             }
@@ -375,7 +379,15 @@ class MainActivity : ComponentActivity() {
         val database = AppDatabase.getDatabase(applicationContext)
         val cycles = database.cycleDao().getAllCyclesSync()
         val logs = database.dailyLogDao().getAllDailyLogsSync()
-        val preferences = UserPreferencesManager.getAllPreferencesMap(applicationContext)
+        val preferences = UserPreferencesManager.getAllPreferencesMap(applicationContext).toMutableMap()
+        preferences.putIfAbsent(
+            "notifications_enabled",
+            UserPreferencesManager.isNotificationsEnabled(applicationContext).toString(),
+        )
+        preferences.putIfAbsent(
+            "notify_daily_reminder",
+            UserPreferencesManager.isNotifyDailyReminder(applicationContext).toString(),
+        )
 
         val cycleArray = org.json.JSONArray()
         cycles.forEach { cycle ->

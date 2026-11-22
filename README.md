@@ -68,3 +68,10 @@ Desenvolvido por **Jeiel Miranda**. Conheça mais em [jeielmiranda.com.br](https
 - O aplicativo é uma PWA: após abrir online e instalar o service worker, páginas e recursos pré-armazenados ficam disponíveis offline. A primeira instalação exige conexão e HTTPS/localhost.
 
 Para validar modo offline, siga [docs/OFFLINE-VALIDATION.md](docs/OFFLINE-VALIDATION.md). As estimativas são educativas e não devem ser usadas como método contraceptivo nem substituem orientação profissional.
+
+
+## Integração com o aplicativo Android
+
+O APK Android usa o mesmo site oficial em uma WebView, com integração nativa para notificações, alarmes e exportação de backups. A interface, navegação e regras de negócio são mantidas no projeto web; o PWA continua disponível diretamente pelo navegador.
+
+Detalhes de arquitetura, segurança, migração do banco Room legado e limites de armazenamento entre PWA e APK estão em [docs/ANDROID-WEBVIEW.md](docs/ANDROID-WEBVIEW.md). A migração é local e preserva o Room original. Chrome/PWA e WebView mantêm perfis IndexedDB isolados, portanto a transferência entre eles é feita pelo backup criptografado `.ddwebbackup`, não por sincronização automática.

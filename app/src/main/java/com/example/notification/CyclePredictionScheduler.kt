@@ -40,7 +40,7 @@ object CyclePredictionScheduler {
     fun rescheduleFromPreferences(context: Context) {
         val stored = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getString(KEY_NEXT_PERIOD_DATE, null)
-        val nextPeriodDate = runCatching { stored?.let(LocalDate::parse) }.getOrNull()
+        val nextPeriodDate = runCatching { stored?.let { LocalDate.parse(it) } }.getOrNull()
         scheduleStoredDate(context, nextPeriodDate)
     }
 

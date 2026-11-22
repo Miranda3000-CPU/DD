@@ -391,6 +391,7 @@ class MainActivity : ComponentActivity() {
                 .put("dailyLogs", org.json.JSONArray())
                 .put("preferences", JSONObject())
                 .put("userName", "")
+                .put("notificationPermissionGranted", areNotificationsAvailable())
         }
 
         val database = AppDatabase.getDatabase(applicationContext)
@@ -449,6 +450,7 @@ class MainActivity : ComponentActivity() {
             .put("dailyLogs", logArray)
             .put("preferences", preferenceJson)
             .put("userName", UserPreferencesManager.getUserName(applicationContext))
+            .put("notificationPermissionGranted", areNotificationsAvailable())
     }
 
     private fun saveNativeFile(

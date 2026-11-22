@@ -71,9 +71,10 @@ object NotificationHelper {
         title: String,
         message: String,
         channelId: String = CHANNEL_PREDICTIONS,
-        notificationId: Int = NOTIFICATION_ID_PREDICTION
+        notificationId: Int = NOTIFICATION_ID_PREDICTION,
+        respectPreferences: Boolean = true
     ) {
-        if (!UserPreferencesManager.isNotificationsEnabled(context)) return
+        if (respectPreferences && !UserPreferencesManager.isNotificationsEnabled(context)) return
 
         createNotificationChannels(context)
 
@@ -123,7 +124,8 @@ object NotificationHelper {
             title = "DD • Diário Dela 🌷",
             message = message,
             channelId = CHANNEL_PREDICTIONS,
-            notificationId = NOTIFICATION_ID_TEST
+            notificationId = NOTIFICATION_ID_TEST,
+            respectPreferences = false
         )
     }
 

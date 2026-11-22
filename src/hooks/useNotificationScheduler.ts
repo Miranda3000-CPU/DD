@@ -1,8 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
+import {
+  isAndroidWebView,
+  showAndroidNotification,
+} from "../native/androidBridge";
 
-const LS_SENT_KEY = 'ciclo_daily_notif_date';
-const PERIODIC_SYNC_TAG = 'ciclo-daily-6am';
-export const CHANGE_EVENT = 'ciclo-daily-notif-changed'; // Still needed for cross-tab communication
+const LS_SENT_KEY = "ciclo_daily_notif_date";
+const PERIODIC_SYNC_TAG = "ciclo-daily-6am";
+
+function localDateKey(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function msUntilNext6AM(): number {
   const now = new Date();
@@ -12,86 +23,87 @@ function msUntilNext6AM(): number {
   return next.getTime() - now.getTime();
 }
 
-function alreadySentToday(): boolean {
-  return localStorage.getItem(LS_SENT_KEY) === new Date().toISOString().split('T')[0];
+export function markSentToday(): void {
+  localStorage.setItem(LS_SENT_KEY, localDateKey());
 }
 
-async function sendViaSW(): Promise<void> {
+export async function sendDailyReminderNow(): Promise<void> {
+  if (isAndroidWebView()) {
+    await showAndroidNotification(
+      "DD • Diário Dela",
+      "Bom dia! Reserve um momento para registrar como você está se sentindo.",
+    );
+    return;
+  }
+
   try {
-    const reg = await navigator.serviceWorker.ready;
-    if (reg.active) {
-      reg.active.postMessage({ type: 'SEND_DAILY_REMINDER' });
+    const registration = await navigator.serviceWorker.ready;
+    if (registration.active) {
+      registration.active.postMessage({ type: "SEND_DAILY_REMINDER" });
       return;
     }
-  } catch { /* SW unavailable */ }
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('DD', {
-      body: 'Bom dia! Abra o DD para acompanhar seu ciclo menstrual.',
-      icon: '/pwa-192x192.svg',
-      tag: 'ciclo-daily',
+  } catch {
+    // Fall through to the browser Notification API.
+  }
+
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("DD • Diário Dela", {
+      body: "Bom dia! Reserve um momento para registrar como você está se sentindo.",
+      icon: "/pwa-192x192.svg",
+      tag: "ciclo-daily",
     });
   }
 }
 
-function markSentToday() {
-  localStorage.setItem(LS_SENT_KEY, new Date().toISOString().split('T')[0]);
+export async function updatePeriodicSync(shouldEnable: boolean): Promise<void> {
+  if (isAndroidWebView() || !("serviceWorker" in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const periodicSync = (registration as ServiceWorkerRegistration & {
+      periodicSync?: {
+        register: (tag: string, options: { minInterval: number }) => Promise<void>;
+        unregister: (tag: string) => Promise<void>;
+      };
+    }).periodicSync;
+
+    if (!periodicSync) return;
+    if (shouldEnable) {
+      await periodicSync.register(PERIODIC_SYNC_TAG, { minInterval: 24 * 60 * 60 * 1000 });
+    } else {
+      await periodicSync.unregister(PERIODIC_SYNC_TAG).catch(() => undefined);
+    }
+  } catch {
+    // Periodic Background Sync is optional and not supported by every browser.
+  }
 }
 
-/**
- * Schedules the daily 6 AM reminder.
- *
- * Behaviour by scenario:
- * ┌─────────────────────────────────────────────────────────────────┐
- * │ Scenario                │ Action                                 │
- * ├─────────────────────────┼────────────────────────────────────────┤
- * │ Toggle just activated   │ Fire IMMEDIATELY (first confirmation)  │
- * │                         │ + schedule next 6 AM                   │
- * ├─────────────────────────┼────────────────────────────────────────┤
- * │ App opened, past 6 AM,  │ Fire now (missed reminder recovery)    │
- * │ not sent today          │ + schedule next 6 AM                   │
- * ├─────────────────────────┼────────────────────────────────────────┤
- * │ App opened, before 6 AM │ Only schedule next 6 AM                │
- * │ or already sent today   │                                        │
- * ├─────────────────────────┼────────────────────────────────────────┤
- * │ Toggle disabled         │ Clear pending timeout                  │
- * └─────────────────────────┴────────────────────────────────────────┘
- */
-export function useNotificationScheduler(enabled: boolean) {
+/** Schedules the web fallback only when both notification settings are enabled. */
+export function useNotificationScheduler(enabled: boolean): void {
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
+    if (isAndroidWebView()) return;
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (!enabled) {
+      void updatePeriodicSync(false);
+      return;
+    }
 
     const scheduleNext = () => {
-      clearTimeout(timeoutId);
-      if (enabled && 'Notification' in window && Notification.permission === 'granted') {
-        timeoutId = setTimeout(() => {
-          if (!alreadySentToday()) {
-            markSentToday();
-            sendViaSW();
-          }
-          scheduleNext();
-        }, msUntilNext6AM());
-      }
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      timeoutId = setTimeout(async () => {
+        if (localStorage.getItem(LS_SENT_KEY) !== localDateKey()) {
+          markSentToday();
+          await sendDailyReminderNow();
+        }
+        scheduleNext();
+      }, msUntilNext6AM());
     };
 
     scheduleNext();
-    return () => clearTimeout(timeoutId);
+    void updatePeriodicSync(true);
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [enabled]);
-
-  // Function to register/unregister periodic sync, to be called from SettingsPage
-  const updatePeriodicSync = async (shouldEnable: boolean) => {
-    if (!('serviceWorker' in navigator)) return;
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const syncMgr = (reg as any).periodicSync;
-      if (syncMgr) {
-        if (shouldEnable) {
-          await syncMgr.register(PERIODIC_SYNC_TAG, { minInterval: 12 * 60 * 60 * 1000 });
-        } else {
-          await syncMgr.unregister(PERIODIC_SYNC_TAG).catch(() => {});
-        }
-      }
-    } catch { /* periodicSync not available */ }
-  };
-
-  return { updatePeriodicSync, sendViaSW, markSentToday };
 }

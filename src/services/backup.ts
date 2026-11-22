@@ -13,6 +13,8 @@ type Payload = {
   cycles: CycleEntry[];
   dailyLogs: DailyLogEntry[];
   settings: AppSettings[];
+  nativeUserName?: string;
+  nativePreferences?: Record<string, string>;
 };
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -117,6 +119,8 @@ async function decodeNativeBackup(text: string, password: string): Promise<Paylo
       notificationsEnabled: preferences.notifications_enabled === "true",
       dailyReminderEnabled: preferences.notify_daily_reminder === "true",
     }],
+    nativeUserName: native.userName,
+    nativePreferences: preferences,
   };
 }
 
@@ -173,5 +177,15 @@ export async function importBackup(file: File, password: string): Promise<{ cycl
         }
       }
     }
+  if (payload.nativeUserName && !localStorage.getItem("ciclo_username")) {
+    localStorage.setItem("ciclo_username", payload.nativeUserName);
+  }
+  const legacyPrefs = payload.nativePreferences ?? {};
+  if (legacyPrefs.privacy_notice_dismissed === "true" && !localStorage.getItem("ciclo_privacy_seen")) {
+    localStorage.setItem("ciclo_privacy_seen", "1");
+  }
+  if (legacyPrefs.calendar_tour_dismissed === "true" && !localStorage.getItem("ciclo_calendar_tour_seen")) {
+    localStorage.setItem("ciclo_calendar_tour_seen", "1");
+  }
   return { cyclesAdded, logsAdded };
 }

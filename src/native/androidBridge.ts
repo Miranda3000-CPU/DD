@@ -96,6 +96,11 @@ export async function setAndroidDailyReminder(
   await requestAndroid("setDailyReminder", { enabled, hour, minute });
 }
 
+export async function scheduleAndroidCyclePrediction(nextPeriodDate: string | null): Promise<void> {
+  if (!isAndroidWebView()) return;
+  await requestAndroid("scheduleCyclePrediction", { nextPeriodDate });
+}
+
 export async function showAndroidNotification(title: string, body: string): Promise<void> {
   if (!isAndroidWebView()) return;
   await requestAndroid("showNotification", { title, body });

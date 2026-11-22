@@ -164,7 +164,7 @@ class MainActivity : ComponentActivity() {
         progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                resources.getDimensionPixelSize(android.R.dimen.app_icon_size) / 8,
+                (3 * resources.displayMetrics.density).toInt().coerceAtLeast(2),
             )
             visibility = View.VISIBLE
         }
@@ -298,16 +298,6 @@ class MainActivity : ComponentActivity() {
                 val enabled = payload.optBoolean("enabled", false)
                 val hour = payload.optInt("hour", 6).coerceIn(0, 23)
                 val minute = payload.optInt("minute", 0).coerceIn(0, 59)
-                if (enabled && !areNotificationsAvailable()) {
-                    reply(
-                        proxy,
-                        id,
-                        ok = false,
-                        error = "Ative a permissão de notificações do Android.",
-                    )
-                    return
-                }
-
                 UserPreferencesManager.setNotificationTime(this, hour, minute)
                 UserPreferencesManager.setNotifyDailyReminder(this, enabled)
                 if (enabled && UserPreferencesManager.isNotificationsEnabled(this)) {

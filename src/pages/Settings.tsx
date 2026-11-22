@@ -29,6 +29,7 @@ import {
   showAndroidNotification,
   scheduleAndroidCyclePrediction,
   downloadBackup,
+  testNotification,
 } from '../native/androidBridge';
 import { exportBackup, importBackup } from '../services/backup';
 import { Download, Upload, ShieldCheck } from 'lucide-react';
@@ -114,6 +115,15 @@ export default function SettingsPage() {
       setDailyNotif(enabled);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível configurar o lembrete.");
+    }
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      await testNotification();
+      toast.success("Notificação de teste enviada.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível testar a notificação.");
     }
   };
 
@@ -250,6 +260,15 @@ export default function SettingsPage() {
               </div>
 
               <div className="h-px bg-border/50" />
+
+              <Button
+                variant="outline"
+                className="w-full rounded-xl"
+                onClick={handleTestNotification}
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                Testar notificação
+              </Button>
 
               {/* Dark mode */}
               <div className="flex items-center justify-between">

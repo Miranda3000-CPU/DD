@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import android.webkit.SafeBrowsingResponse
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -364,11 +363,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun areNotificationsAvailable(): Boolean =
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) true
-        else ContextCompat.checkSelfPermission(
-            this,
-            android.Manifest.permission.POST_NOTIFICATIONS,
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED &&
+        (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED) &&
             androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()
 
     private fun readLegacyData(): JSONObject {

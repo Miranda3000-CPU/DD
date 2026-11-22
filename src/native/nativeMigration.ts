@@ -92,7 +92,6 @@ export async function migrateNativeDataAtStartup(): Promise<void> {
       for (const incoming of nativeLogs) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(incoming.date || "")) continue;
 
-        const createdAt = isoDateTime(incoming.createdAtEpochMilli);
         const updatedAt = isoDateTime(incoming.updatedAtEpochMilli);
         const candidate: Omit<DailyLogEntry, "id"> = {
           date: incoming.date,

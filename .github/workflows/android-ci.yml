@@ -1,0 +1,42 @@
+name: Validate Android WebView shell
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Generate CI debug keystore
+        run: |
+          keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US'
+      - name: Compile and assemble Debug APK
+        run: ./gradlew --no-daemon --no-configuration-cache assembleDebug
+      - name: Run unit tests (retry transient repository failures)
+        run: |
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon --no-configuration-cache testDebugUnitTest; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Gradle test dependency download failed; retrying ($attempt/3)."
+              sleep $((attempt * 15))
+            fi
+          done
+          exit 1

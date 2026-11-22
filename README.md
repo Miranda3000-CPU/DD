@@ -1,6 +1,6 @@
 # DD • Diário Dela 🌷
 
-Aplicativo Android pessoal, privado e offline para acompanhamento do ciclo menstrual e bem-estar, concebido e desenvolvido com todo carinho exclusivamente para a **Giovanna**, noiva do autor.
+Aplicativo Android pessoal que apresenta o DD por meio de uma WebView do site oficial `https://dd.jeielmiranda.com.br/`. A interface e as regras de negócio ficam no projeto web; o APK fornece integração com recursos nativos do Android e preserva os dados locais da versão anterior.
 
 ---
 
@@ -8,14 +8,14 @@ Aplicativo Android pessoal, privado e offline para acompanhamento do ciclo menst
 
 O **DD • Diário Dela** não é um aplicativo comercial genérico e nem uma plataforma para múltiplos usuários. Ele foi desenhado sob medida para atender à rotina da Giovanna, oferecendo uma experiência íntima, acolhedora e livre de distrações, anúncios, cadastros ou qualquer conexão externa.
 
-* **Identidade nativa**: O app reconhece diretamente a Giovanna em sua interface ("*Olá, Giovanna 🌷*", "*Como você está hoje?*", "*Suas previsões*", "*Seu histórico*"), com possibilidade de ajuste de apelido ou preferências visuais.
+* **Interface compartilhada**: O APK e o navegador apresentam a mesma interface React publicada em `dd.jeielmiranda.com.br`. O nome e as preferências locais anteriores são importados para a WebView na primeira abertura.
 * **Sem Contas ou Logins**: Não há telas de login, senhas de acesso à nuvem ou sincronizações com servidores terceiros. O dispositivo da Giovanna é o único guardião de suas informações.
 
 ---
 
 ## 2. Privacidade Absoluta e Arquitetura Offline-First
 
-* **Zero Conexão com a Internet**: O manifesto do aplicativo não declara a permissão `android.permission.INTERNET`. É tecnicamente impossível para o aplicativo transmitir dados para qualquer servidor ou terceiros.
+* **Conexão HTTPS restrita ao site**: O APK declara `android.permission.INTERNET` para carregar e atualizar o site oficial. A WebView permite navegação interna somente no domínio HTTPS configurado; links externos saem para o navegador do sistema. O aplicativo não possui API de sincronização de dados, conta ou telemetria.
 * **Sem Telemetria ou Analytics**: Dependências de serviços como Firebase, Google Analytics e SDKs de anúncios foram completamente expurgadas.
 * **Proteção contra Vazamento em Backups Automáticos**:
   * `android:allowBackup="false"` no `AndroidManifest.xml`.
@@ -71,7 +71,9 @@ Abandonou-se qualquer terminologia de marketing enganosa (como "Inteligência Ar
 ## 5. Arquitetura Técnica
 
 * **Linguagem**: Kotlin 2.2.10
-* **UI Toolkit**: Jetpack Compose com Material Design 3 e suporte a temas claros/escuros
+* **Interface**: WebView com o site React/Vite oficial; AndroidX WebKit disponibiliza uma ponte assíncrona com lista de origens permitidas.
+* **Recursos nativos**: permissão `POST_NOTIFICATIONS`, notificações por canais, lembrete diário com AlarmManager inexato e exportação via Storage Access Framework.
+* **Segurança da WebView**: HTTPS obrigatório, conteúdo misto desabilitado, acesso a arquivos locais bloqueado e ponte disponível somente para `https://dd.jeielmiranda.com.br`.
 * **Banco de Dados**: Room 2.7.0 (Schema versão 2, exportação ativada via KSP)
   * `cycle_records`: Registro de menstruações com chave natural, timestamps e identificador estável `uuid`.
   * `daily_logs`: Registro diário granular (intensidade de fluxo, nível de dor, sintomas, humor, energia, sono, muco cervical, notas livres).
@@ -96,8 +98,8 @@ Para garantir que a atualização sobre o aplicativo já instalado no smartphone
 
 1. **Application ID**: Mantido identicamente como `com.aistudio.ciclo.menstrual`.
 2. **Versionamento**:
-   * Versão anterior: `versionCode = 4` (`versionName = "4.0"`)
-   * Versão atual: `versionCode = 5` (`versionName = "5.0"`)
+   * Versão anterior: `versionCode = 5` (`versionName = "5.0"`)
+   * Versão atual: `versionCode = 6` (`versionName = "6.0"`)
 3. **Assinatura e Keystore**:
    * Assinado com o mesmo certificado de depuração original (`debug.keystore`), cujo hash SHA-256 é:
      ```text
@@ -109,4 +111,17 @@ Para garantir que a atualização sobre o aplicativo já instalado no smartphone
    # ou para o build de debug:
    adb install -r app/build/outputs/apk/debug/app-debug.apk
    ```
-   O parâmetro `-r` reinstala o aplicativo sobre a versão existente, acionando a migração `MIGRATION_1_2` do Room e mantendo todos os ciclos e dados históricos da Giovanna 100% intactos.
+   O parâmetro `-r` reinstala o aplicativo sobre a versão existente. O Room v2 é mantido sem exclusão; na primeira abertura, os ciclos e registros diários são mesclados para o IndexedDB do site. A base Room original permanece no dispositivo como salvaguarda.
+
+
+---
+
+## 7. Aplicação Web compartilhada e armazenamento local
+
+O APK carrega `https://dd.jeielmiranda.com.br/`; o projeto web `Miranda3000-CPU/DD` é a fonte da interface, navegação, cálculos e configurações. O PWA continua sendo instalado diretamente pelo navegador. O APK não apresenta mais uma segunda interface Compose para o fluxo diário.
+
+Na primeira abertura, a ponte nativa entrega os registros Room e preferências antigas para uma migração idempotente ao IndexedDB. A confirmação só é gravada depois da transação web ser concluída e a base Room original não é apagada.
+
+**Limite importante:** o armazenamento IndexedDB da WebView não é o mesmo armazenamento do Chrome/PWA. Sem backend, conta ou sincronização, os dois perfis não compartilham alterações automaticamente. A transferência manual é feita pelo backup criptografado `.ddwebbackup` nas configurações. Os arquivos antigos `.ddbackup` não são convertidos automaticamente.
+
+O Android usa `WebViewCompat.addWebMessageListener` com allowlist de origem, em vez de expor um `JavascriptInterface` irrestrito. A ponte implementa permissões e notificações Android, lembrete diário e exportação de arquivos pelo SAF. O lembrete diário é inexato e pode ser entregue com atraso pelo sistema.

@@ -1,316 +1,532 @@
 package com.example
 
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.FrameLayout
+import android.widget.ProgressBar
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
+import androidx.lifecycle.lifecycleScope
+import com.example.data.AppDatabase
+import com.example.notification.CyclePredictionScheduler
+import com.example.notification.DailyReminderScheduler
 import com.example.notification.NotificationHelper
-import com.example.ui.CycleViewModel
-import com.example.ui.components.CycleHistoryList
-import com.example.ui.components.HeroPhaseCard
-import com.example.ui.components.LogPeriodDialog
-import com.example.ui.components.PredictionCards
-import com.example.ui.components.PrivacyNoticeBanner
-import com.example.ui.components.SettingsScreen
-import com.example.ui.components.UserNameHeader
-import com.example.ui.components.VisualCalendar
-import com.example.ui.theme.MeuCicloTheme
-import com.example.ui.theme.PeriodRosePrimary
+import com.example.util.UserPreferencesManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.time.LocalDate
+import java.util.Base64
 
+/**
+ * Android shell for the DD website.
+ *
+ * The website is the single UI and application-logic implementation. Native
+ * capabilities are exposed only to the exact HTTPS production origin through
+ * WebViewCompat's origin-allowlisted WebMessage API.
+ */
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: CycleViewModel by viewModels()
+    companion object {
+        private const val APP_HOST = "dd.jeielmiranda.com.br"
+        private const val APP_ORIGIN = "https://dd.jeielmiranda.com.br"
+        private const val APP_URL = "$APP_ORIGIN/"
+        private const val BRIDGE_NAME = "ddAndroid"
+        private const val BRIDGE_PREFS = "dd_webview_bridge"
+        private const val KEY_LEGACY_MIGRATION_COMPLETE = "legacy_migration_completed"
+    }
 
+    private lateinit var webView: WebView
+    private lateinit var progressBar: ProgressBar
+    private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingPermissionReply: PendingReply? = null
+    private var pendingSave: PendingSave? = null
+
+    private data class PendingReply(
+        val id: String,
+        val proxy: androidx.webkit.JavaScriptReplyProxy,
+    )
+
+    private data class PendingSave(
+        val id: String,
+        val proxy: androidx.webkit.JavaScriptReplyProxy,
+        val filename: String,
+        val bytes: ByteArray,
+    )
+
+    private val filePicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        fileChooserCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else null)
+        fileChooserCallback = null
+    }
+
+    private val createBackupFile = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        val pending = pendingSave ?: return@registerForActivityResult
+        pendingSave = null
+        if (uri == null) {
+            reply(pending.proxy, pending.id, ok = false, error = "Exportação cancelada.")
+            return@registerForActivityResult
+        }
+
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    contentResolver.openOutputStream(uri)?.use { it.write(pending.bytes) }
+                        ?: error("Não foi possível abrir o destino do arquivo.")
+                }
+            }
+            result.onSuccess {
+                reply(pending.proxy, pending.id, ok = true, data = JSONObject().put("saved", true))
+            }.onFailure {
+                reply(pending.proxy, pending.id, ok = false, error = "Não foi possível salvar o backup.")
+            }
+        }
+    }
+
+    private val requestNotifications = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val pending = pendingPermissionReply
+        pendingPermissionReply = null
+        if (pending != null) {
+            val enabled = granted && androidx.core.app.NotificationManagerCompat
+                .from(this).areNotificationsEnabled()
+            reply(
+                pending.proxy,
+                pending.id,
+                ok = true,
+                data = JSONObject().put("granted", enabled),
+            )
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
 
-        // Create notification channels on start
         NotificationHelper.createNotificationChannels(applicationContext)
+        buildWebView()
+        registerNativeBridge()
+        configureBackNavigation()
 
-        setContent {
-            MeuCicloTheme {
-                MeuCicloApp(viewModel = viewModel)
-            }
+        if (savedInstanceState == null) {
+            webView.loadUrl(APP_URL)
+        } else {
+            webView.restoreState(savedInstanceState)
         }
     }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MeuCicloApp(viewModel: CycleViewModel) {
-    val context = LocalContext.current
-
-    val cycles by viewModel.cycles.collectAsStateWithLifecycle()
-    val dailyLogs by viewModel.dailyLogs.collectAsStateWithLifecycle()
-    val prediction by viewModel.prediction.collectAsStateWithLifecycle()
-    val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle()
-    val selectedCalendarDate by viewModel.selectedCalendarDate.collectAsStateWithLifecycle()
-    val selectedDateLog by viewModel.selectedDateLog.collectAsStateWithLifecycle()
-    val userName by viewModel.userName.collectAsStateWithLifecycle()
-    val privacyNoticeDismissed by viewModel.privacyNoticeDismissed.collectAsStateWithLifecycle()
-
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: Início, 1: Calendário, 2: Histórico, 3: Ajustes
-    var showLogDialog by remember { mutableStateOf(false) }
-    var logDialogInitialDate by remember { mutableStateOf(LocalDate.now()) }
-
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("main_scaffold"),
-        bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
-            ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
-                    label = { Text("Início") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PeriodRosePrimary,
-                        indicatorColor = PeriodRosePrimary.copy(alpha = 0.15f)
-                    ),
-                    modifier = Modifier.testTag("nav_item_home")
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = "Calendário") },
-                    label = { Text("Calendário") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PeriodRosePrimary,
-                        indicatorColor = PeriodRosePrimary.copy(alpha = 0.15f)
-                    ),
-                    modifier = Modifier.testTag("nav_item_calendar")
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.History, contentDescription = "Histórico") },
-                    label = { Text("Histórico") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PeriodRosePrimary,
-                        indicatorColor = PeriodRosePrimary.copy(alpha = 0.15f)
-                    ),
-                    modifier = Modifier.testTag("nav_item_history")
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 3,
-                    onClick = { selectedTab = 3 },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Ajustes") },
-                    label = { Text("Ajustes") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PeriodRosePrimary,
-                        indicatorColor = PeriodRosePrimary.copy(alpha = 0.15f)
-                    ),
-                    modifier = Modifier.testTag("nav_item_settings")
-                )
+    private fun buildWebView() {
+        val container = FrameLayout(this)
+        webView = WebView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
+            settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                databaseEnabled = true
+                cacheMode = WebSettings.LOAD_DEFAULT
+                mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                allowFileAccess = false
+                allowContentAccess = false
+                javaScriptCanOpenWindowsAutomatically = false
+                setSupportMultipleWindows(false)
+                mediaPlaybackRequiresUserGesture = true
+                builtInZoomControls = false
+                displayZoomControls = false
+                loadsImagesAutomatically = true
+                textZoom = 100
             }
-        },
-        floatingActionButton = {
-            if (selectedTab == 0 || selectedTab == 1) {
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        logDialogInitialDate = LocalDate.now()
-                        showLogDialog = true
-                    },
-                    containerColor = PeriodRosePrimary,
-                    contentColor = Color.White,
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.WaterDrop,
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    },
-                    text = { Text("Registrar", fontWeight = FontWeight.Bold) },
-                    modifier = Modifier.testTag("fab_register")
-                )
+            overScrollMode = View.OVER_SCROLL_NEVER
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
+        }
+
+        progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (3 * resources.displayMetrics.density).toInt().coerceAtLeast(2),
+            )
+            visibility = View.VISIBLE
+        }
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?,
+            ): Boolean {
+                val uri = request?.url ?: return true
+                if (uri.scheme == "https" &&
+                    uri.host.equals(APP_HOST, ignoreCase = true) &&
+                    (uri.port == -1 || uri.port == 443)
+                ) {
+                    return false
+                }
+                openExternalLink(uri)
+                return true
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?,
+            ) {
+                super.onReceivedError(view, request, error)
+                if (request?.isForMainFrame == true) {
+                    progressBar.visibility = View.GONE
+                }
             }
         }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                progressBar.progress = newProgress
+                progressBar.visibility = if (newProgress >= 100) View.GONE else View.VISIBLE
+            }
+
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?,
+            ): Boolean {
+                fileChooserCallback?.onReceiveValue(null)
+                fileChooserCallback = filePathCallback
+                return try {
+                    filePicker.launch(arrayOf("*/*"))
+                    true
+                } catch (_: Exception) {
+                    fileChooserCallback = null
+                    false
+                }
+            }
+        }
+
+        container.addView(webView)
+        container.addView(progressBar)
+        setContentView(container)
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
+            WebSettingsCompatBridge.enableSafeBrowsing(webView)
+        }
+    }
+
+    private fun registerNativeBridge() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            // The Web app detects the missing bridge and keeps its browser fallback.
+            return
+        }
+
+        WebViewCompat.addWebMessageListener(
+            webView,
+            BRIDGE_NAME,
+            setOf(APP_ORIGIN),
+        ) { _, message, sourceOrigin, isMainFrame, replyProxy ->
+            if (!isMainFrame ||
+                sourceOrigin.scheme != "https" ||
+                !sourceOrigin.host.equals(APP_HOST, ignoreCase = true) ||
+                (sourceOrigin.port != -1 && sourceOrigin.port != 443)
+            ) {
+                return@addWebMessageListener
+            }
+
+            val request = runCatching { JSONObject(message.data ?: "") }.getOrNull()
+            if (request == null) {
+                reply(replyProxy, "", ok = false, error = "Solicitação inválida.")
+                return@addWebMessageListener
+            }
+
+            val id = request.optString("id")
+            val action = request.optString("action")
+            val payload = request.optJSONObject("payload") ?: JSONObject()
+            if (id.isBlank()) {
+                reply(replyProxy, "", ok = false, error = "Identificador ausente.")
+                return@addWebMessageListener
+            }
+
+            handleBridgeRequest(id, action, payload, replyProxy)
+        }
+    }
+
+    private fun handleBridgeRequest(
+        id: String,
+        action: String,
+        payload: JSONObject,
+        proxy: androidx.webkit.JavaScriptReplyProxy,
+    ) {
+        when (action) {
+            "getLegacyData" -> {
+                lifecycleScope.launch {
+                    val data = withContext(Dispatchers.IO) { readLegacyData() }
+                    reply(proxy, id, ok = true, data = data)
+                }
+            }
+
+            "completeLegacyMigration" -> {
+                getSharedPreferences(BRIDGE_PREFS, MODE_PRIVATE)
+                    .edit().putBoolean(KEY_LEGACY_MIGRATION_COMPLETE, true).apply()
+                reply(proxy, id, ok = true, data = JSONObject().put("completed", true))
+            }
+
+            "requestNotificationPermission" -> requestNotificationAccess(id, proxy)
+
+            "setNotificationsEnabled" -> {
+                val enabled = payload.optBoolean("enabled", false)
+                UserPreferencesManager.setNotificationsEnabled(this, enabled)
+                if (!enabled) {
+                    UserPreferencesManager.setNotifyDailyReminder(this, false)
+                    DailyReminderScheduler.cancel(this)
+                    CyclePredictionScheduler.cancel(this)
+                }
+                reply(proxy, id, ok = true, data = JSONObject().put("enabled", enabled))
+            }
+
+            "setDailyReminder" -> {
+                val enabled = payload.optBoolean("enabled", false)
+                val hour = payload.optInt("hour", 6).coerceIn(0, 23)
+                val minute = payload.optInt("minute", 0).coerceIn(0, 59)
+                UserPreferencesManager.setNotificationTime(this, hour, minute)
+                UserPreferencesManager.setNotifyDailyReminder(this, enabled)
+                if (enabled && UserPreferencesManager.isNotificationsEnabled(this)) {
+                    DailyReminderScheduler.schedule(this, hour, minute)
+                } else {
+                    DailyReminderScheduler.cancel(this)
+                }
+                reply(proxy, id, ok = true, data = JSONObject().put("enabled", enabled))
+            }
+
+            "scheduleCyclePrediction" -> {
+                val dateText = payload.optString("nextPeriodDate").takeIf { it.isNotBlank() }
+                val nextPeriodDate = if (dateText == null) {
+                    null
+                } else {
+                    runCatching { LocalDate.parse(dateText) }.getOrNull()
+                }
+                if (dateText != null && nextPeriodDate == null) {
+                    reply(proxy, id, ok = false, error = "Data de previsão inválida.")
+                    return
+                }
+                CyclePredictionScheduler.schedule(this, nextPeriodDate)
+                reply(proxy, id, ok = true, data = JSONObject().put("scheduled", nextPeriodDate != null))
+            }
+
+            "showNotification" -> {
+                if (!areNotificationsAvailable()) {
+                    reply(proxy, id, ok = false, error = "Notificações não autorizadas pelo Android.")
+                    return
+                }
+                NotificationHelper.showNotification(
+                    context = this,
+                    title = payload.optString("title", "DD • Diário Dela"),
+                    message = payload.optString("body", "Você tem um lembrete do Diário Dela."),
+                    channelId = NotificationHelper.CHANNEL_REMINDERS,
+                    notificationId = NotificationHelper.NOTIFICATION_ID_REMINDER,
+                )
+                reply(proxy, id, ok = true, data = JSONObject().put("shown", true))
+            }
+
+            "saveFile" -> saveNativeFile(id, payload, proxy)
+
+            else -> reply(proxy, id, ok = false, error = "Recurso nativo não reconhecido.")
+        }
+    }
+
+    private fun requestNotificationAccess(
+        id: String,
+        proxy: androidx.webkit.JavaScriptReplyProxy,
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item {
-                    UserNameHeader(
-                        userName = userName,
-                        onUpdateUserName = { newName ->
-                            viewModel.setUserName(newName)
-                        }
-                    )
-                }
+            reply(
+                proxy,
+                id,
+                ok = true,
+                data = JSONObject().put("granted", areNotificationsAvailable()),
+            )
+            return
+        }
 
-                if (!privacyNoticeDismissed && selectedTab == 0) {
-                    item {
-                        PrivacyNoticeBanner(
-                            onDismiss = { viewModel.dismissPrivacyNotice() }
-                        )
-                    }
-                }
+        pendingPermissionReply = PendingReply(id, proxy)
+        requestNotifications.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
 
-                when (selectedTab) {
-                    // TAB 0: Início
-                    0 -> {
-                        item {
-                            HeroPhaseCard(
-                                prediction = prediction,
-                                onLogTodayClick = {
-                                    logDialogInitialDate = LocalDate.now()
-                                    showLogDialog = true
-                                },
-                                onLogCustomClick = {
-                                    logDialogInitialDate = LocalDate.now()
-                                    showLogDialog = true
-                                }
-                            )
-                        }
+    private fun areNotificationsAvailable(): Boolean =
+        (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED) &&
+            androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()
 
-                        item {
-                            PredictionCards(prediction = prediction)
-                        }
-                    }
+    private suspend fun readLegacyData(): JSONObject {
+        val completed = getSharedPreferences(BRIDGE_PREFS, MODE_PRIVATE)
+            .getBoolean(KEY_LEGACY_MIGRATION_COMPLETE, false)
+        if (completed) {
+            return JSONObject()
+                .put("migrated", true)
+                .put("cycles", org.json.JSONArray())
+                .put("dailyLogs", org.json.JSONArray())
+                .put("preferences", JSONObject())
+                .put("userName", "")
+                .put("notificationPermissionGranted", areNotificationsAvailable())
+        }
 
-                    // TAB 1: Calendário
-                    1 -> {
-                        item {
-                            VisualCalendar(
-                                cycles = cycles,
-                                dailyLogs = dailyLogs,
-                                prediction = prediction,
-                                selectedDate = selectedCalendarDate,
-                                selectedDateLog = selectedDateLog,
-                                onDateSelected = { date ->
-                                    viewModel.setSelectedCalendarDate(date)
-                                },
-                                onLogDateClick = { date ->
-                                    logDialogInitialDate = date
-                                    showLogDialog = true
-                                }
-                            )
-                        }
+        val database = AppDatabase.getDatabase(applicationContext)
+        val cycles = database.cycleDao().getAllCyclesSync()
+        val logs = database.dailyLogDao().getAllDailyLogsSync()
+        val preferences = UserPreferencesManager.getAllPreferencesMap(applicationContext).toMutableMap()
+        preferences.putIfAbsent(
+            "notifications_enabled",
+            UserPreferencesManager.isNotificationsEnabled(applicationContext).toString(),
+        )
+        preferences.putIfAbsent(
+            "notify_daily_reminder",
+            UserPreferencesManager.isNotifyDailyReminder(applicationContext).toString(),
+        )
 
-                        item {
-                            PredictionCards(prediction = prediction)
-                        }
-                    }
+        val cycleArray = org.json.JSONArray()
+        cycles.forEach { cycle ->
+            cycleArray.put(
+                JSONObject()
+                    .put("uuid", cycle.uuid)
+                    .put("startDate", LocalDate.ofEpochDay(cycle.startDateEpochDay).toString())
+                    .put("periodLengthDays", cycle.periodLengthDays)
+                    .put("flowIntensity", cycle.flowIntensity)
+                    .put("symptoms", cycle.symptoms)
+                    .put("notes", cycle.notes)
+                    .put("createdAtEpochMilli", cycle.createdAtEpochMilli)
+                    .put("updatedAtEpochMilli", cycle.updatedAtEpochMilli),
+            )
+        }
 
-                    // TAB 2: Histórico e Gráficos
-                    2 -> {
-                        item {
-                            CycleHistoryList(
-                                cycles = cycles,
-                                averageCycleDays = prediction.averageCycleDays,
-                                mlPredictedCycleDays = prediction.adaptiveCycleDays,
-                                mlConfidencePercent = 90,
-                                onDeleteCycle = { id ->
-                                    viewModel.deleteCycle(id)
-                                }
-                            )
-                        }
-                    }
+        val logArray = org.json.JSONArray()
+        logs.forEach { log ->
+            logArray.put(
+                JSONObject()
+                    .put("uuid", log.uuid)
+                    .put("date", LocalDate.ofEpochDay(log.dateEpochDay).toString())
+                    .put("flowIntensity", log.flowIntensity ?: JSONObject.NULL)
+                    .put("painLevel", log.painLevel ?: JSONObject.NULL)
+                    .put("symptoms", log.symptoms)
+                    .put("mood", log.mood ?: JSONObject.NULL)
+                    .put("energyLevel", log.energyLevel ?: JSONObject.NULL)
+                    .put("sleepQuality", log.sleepQuality ?: JSONObject.NULL)
+                    .put("cervicalMucus", log.cervicalMucus ?: JSONObject.NULL)
+                    .put("notes", log.notes)
+                    .put("createdAtEpochMilli", log.createdAtEpochMilli)
+                    .put("updatedAtEpochMilli", log.updatedAtEpochMilli),
+            )
+        }
 
-                    // TAB 3: Ajustes e Backup
-                    3 -> {
-                        item {
-                            SettingsScreen(
-                                viewModel = viewModel,
-                                userName = userName,
-                                onUpdateUserName = { newName ->
-                                    viewModel.setUserName(newName)
-                                },
-                                notificationsEnabled = notificationsEnabled,
-                                onToggleNotifications = { enabled ->
-                                    viewModel.toggleNotifications(enabled, context)
-                                }
-                            )
-                        }
-                    }
-                }
+        val preferenceJson = JSONObject()
+        preferences.forEach { (key, value) -> preferenceJson.put(key, value) }
 
-                item {
-                    Spacer(modifier = Modifier.height(72.dp))
-                }
-            }
+        return JSONObject()
+            .put("migrated", false)
+            .put("cycles", cycleArray)
+            .put("dailyLogs", logArray)
+            .put("preferences", preferenceJson)
+            .put("userName", UserPreferencesManager.getUserName(applicationContext))
+            .put("notificationPermissionGranted", areNotificationsAvailable())
+    }
+
+    private fun saveNativeFile(
+        id: String,
+        payload: JSONObject,
+        proxy: androidx.webkit.JavaScriptReplyProxy,
+    ) {
+        val filename = payload.optString("filename", "diario-dela.ddwebbackup")
+            .substringAfterLast('/')
+            .substringAfterLast('\\')
+            .ifBlank { "diario-dela.ddwebbackup" }
+        val encoded = payload.optString("base64")
+        val bytes = runCatching { Base64.getDecoder().decode(encoded) }.getOrNull()
+        if (bytes == null) {
+            reply(proxy, id, ok = false, error = "Conteúdo do backup inválido.")
+            return
+        }
+
+        pendingSave = PendingSave(id, proxy, filename, bytes)
+        createBackupFile.launch(filename)
+    }
+
+    private fun reply(
+        proxy: androidx.webkit.JavaScriptReplyProxy,
+        id: String,
+        ok: Boolean,
+        data: JSONObject? = null,
+        error: String? = null,
+    ) {
+        val response = JSONObject()
+            .put("id", id)
+            .put("ok", ok)
+        if (data != null) response.put("data", data)
+        if (error != null) response.put("error", error)
+        runCatching { proxy.postMessage(response.toString()) }
+    }
+
+    private fun openExternalLink(uri: Uri) {
+        if (uri.scheme !in setOf("https", "http", "mailto", "tel")) return
+        runCatching {
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
         }
     }
 
-    if (showLogDialog) {
-        LogPeriodDialog(
-            initialDate = logDialogInitialDate,
-            existingLog = selectedDateLog,
-            onDismiss = { showLogDialog = false },
-            onSave = { startDate, isPeriodStart, periodLengthDays, flowIntensity, painLevel, symptoms, mood, energyLevel, sleepQuality, cervicalMucus, notes ->
-                if (isPeriodStart) {
-                    viewModel.registerPeriodOnDate(
-                        startDate = startDate,
-                        periodLengthDays = periodLengthDays,
-                        flowIntensity = flowIntensity,
-                        symptoms = symptoms,
-                        notes = notes
-                    )
-                }
-                viewModel.saveDailyLog(
-                    date = startDate,
-                    flowIntensity = flowIntensity,
-                    painLevel = painLevel,
-                    symptoms = symptoms,
-                    mood = mood,
-                    energyLevel = energyLevel,
-                    sleepQuality = sleepQuality,
-                    cervicalMucus = cervicalMucus,
-                    notes = notes
-                )
-                showLogDialog = false
+    private fun configureBackNavigation() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (::webView.isInitialized && webView.canGoBack()) webView.goBack()
+                else finish()
             }
-        )
+        })
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        if (::webView.isInitialized) webView.saveState(outState)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        fileChooserCallback?.onReceiveValue(null)
+        fileChooserCallback = null
+        if (::webView.isInitialized) {
+            (webView.parent as? ViewGroup)?.removeView(webView)
+            webView.stopLoading()
+            webView.webChromeClient = null
+            webView.webViewClient = WebViewClient()
+            webView.destroy()
+        }
+        super.onDestroy()
+    }
+
+    private object WebSettingsCompatBridge {
+        fun enableSafeBrowsing(view: WebView) {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
+                androidx.webkit.WebSettingsCompat.setSafeBrowsingEnabled(view.settings, true)
+            }
+        }
     }
 }

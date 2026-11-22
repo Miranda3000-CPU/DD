@@ -33,6 +33,7 @@ interface NativeLegacyData {
   dailyLogs: NativeDailyLog[];
   preferences: Record<string, string>;
   userName?: string;
+  notificationPermissionGranted?: boolean;
 }
 
 const isoDateTime = (value?: number) =>
@@ -126,7 +127,9 @@ export async function migrateNativeDataAtStartup(): Promise<void> {
           id: 1,
           cycleLength: 28,
           periodDuration,
-          notificationsEnabled: preferences.notifications_enabled === "true",
+          notificationsEnabled:
+            preferences.notifications_enabled === "true" &&
+            legacy.notificationPermissionGranted !== false,
           dailyReminderEnabled: preferences.notify_daily_reminder === "true",
         };
         await db.settings.put(settings);

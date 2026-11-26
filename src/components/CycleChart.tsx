@@ -28,15 +28,12 @@ interface ChartPoint {
 
 export function CycleChart({ cycles, avgCycleLength, prediction, predicting }: CycleChartProps) {
   const sorted = [...cycles].sort(
-    (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
   );
 
   const data: ChartPoint[] = [];
   for (let i = 0; i < sorted.length - 1; i++) {
-    const diff = differenceInDays(
-      parseISO(sorted[i + 1].startDate),
-      parseISO(sorted[i].startDate)
-    );
+    const diff = differenceInDays(parseISO(sorted[i + 1].startDate), parseISO(sorted[i].startDate));
     // Relaxed range: 14–90 days covers all realistic cycle lengths
     if (diff >= 14 && diff <= 90) {
       data.push({
@@ -155,7 +152,11 @@ export function CycleChart({ cycles, avgCycleLength, prediction, predicting }: C
               <strong className="text-foreground">{prediction} dias</strong>, enquanto sua média
               histórica é de <strong className="text-foreground">{avgCycleLength} dias</strong> —
               diferença de{' '}
-              <span className={prediction > avgCycleLength ? 'text-blue-500' : 'text-primary font-medium'}>
+              <span
+                className={
+                  prediction > avgCycleLength ? 'text-blue-500' : 'text-primary font-medium'
+                }
+              >
                 {prediction > avgCycleLength ? '+' : ''}
                 {prediction - avgCycleLength} dias
               </span>

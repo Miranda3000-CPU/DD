@@ -21,12 +21,13 @@ function isMobile(): boolean {
 }
 
 export function usePWAInstall() {
-  const [installPromptEvent, setInstallPromptEvent] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(
+    null,
+  );
   const [isInstallable, setIsInstallable] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
   const [isDismissed, setIsDismissed] = useState(
-    () => !!localStorage.getItem('ciclo_install_dismissed')
+    () => !!localStorage.getItem('ciclo_install_dismissed'),
   );
 
   useEffect(() => {

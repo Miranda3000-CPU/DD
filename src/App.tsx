@@ -1,33 +1,42 @@
-import { useEffect } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
-import { Toaster, toast } from "sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "next-themes";
-import { BottomNav } from "@/components/ui/bottom-nav";
-import { PrivacyNotice } from "@/components/PrivacyNotice";
-import { UsernameModal } from "@/components/UsernameModal";
-import { InstallPrompt } from "@/components/InstallPrompt";
-import { AppMetaProvider, useAppMetaContext } from "@/context/AppMetaContext";
-import { useRegisterSW } from "virtual:pwa-register/react";
-import { useNotificationScheduler } from "@/hooks/useNotificationScheduler";
-import { useCycle } from "@/hooks/useCycle";
-import { isAndroidWebView, setAndroidNotificationsEnabled, setAndroidDailyReminder, scheduleAndroidCyclePrediction } from "@/native/androidBridge";
-import { formatDate } from "@/utils/dateUtils";
+import { useEffect } from 'react';
+import { Switch, Route, Router as WouterRouter } from 'wouter';
+import { Toaster, toast } from 'sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { ThemeProvider } from 'next-themes';
+import { BottomNav } from '@/components/ui/bottom-nav';
+import { PrivacyNotice } from '@/components/PrivacyNotice';
+import { InstallPrompt } from '@/components/InstallPrompt';
+import { AppMetaProvider, useAppMetaContext } from '@/context/AppMetaContext';
+import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
+import { useCycle } from '@/hooks/useCycle';
+import {
+  isAndroidWebView,
+  setAndroidNotificationsEnabled,
+  setAndroidDailyReminder,
+  scheduleAndroidCyclePrediction,
+} from '@/native/androidBridge';
+import { formatDate } from '@/utils/dateUtils';
 
-import Dashboard from "@/pages/Dashboard";
-import CalendarPage from "@/pages/Calendar";
-import HistoryPage from "@/pages/History";
-import SettingsPage from "@/pages/Settings";
-import DailyLogPage from "@/pages/DailyLog";
-import EducationPage from "@/pages/Education";
-import NotFound from "@/pages/not-found";
+import Dashboard from '@/pages/Dashboard';
+import CalendarPage from '@/pages/Calendar';
+import HistoryPage from '@/pages/History';
+import SettingsPage from '@/pages/Settings';
+import DailyLogPage from '@/pages/DailyLog';
+import EducationPage from '@/pages/Education';
+import NotFound from '@/pages/not-found';
 
 function AppShell() {
-  const { userName, privacySeen, saveName, acknowledgePrivacy } = useAppMetaContext();
+  const { privacySeen, acknowledgePrivacy } = useAppMetaContext();
 
   // SW update notification — when a new version is cached, offer one-click reload
-  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW({
-    onRegistered(r) { r && setInterval(() => r.update(), 60 * 60 * 1000); },
+  const {
+    needRefresh: [needRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegistered(r) {
+      r && setInterval(() => r.update(), 60 * 60 * 1000);
+    },
   });
 
   // A mesma configuração alimenta o fallback web e o agendamento nativo Android.
@@ -72,10 +81,7 @@ function AppShell() {
     }
   }, [needRefresh, updateServiceWorker]);
 
-  // Step 1 — show privacy notice until acknowledged.
-  // Step 2 — after privacy is seen, show username modal if name is blank.
   const showPrivacy = !privacySeen;
-  const showUsername = privacySeen && !userName;
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-16 selection:bg-primary selection:text-primary-foreground font-sans">
@@ -97,7 +103,6 @@ function AppShell() {
 
       {/* One-time overlays — rendered after the page so they sit on top */}
       <PrivacyNotice visible={showPrivacy} onAcknowledge={acknowledgePrivacy} />
-      <UsernameModal visible={showUsername} onSave={saveName} />
     </div>
   );
 }
@@ -107,11 +112,11 @@ function App() {
     <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
       <TooltipProvider>
         <AppMetaProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <AppShell />
           </WouterRouter>
         </AppMetaProvider>
-        <Toaster position="top-center" toastOptions={{ className: "rounded-2xl" }} />
+        <Toaster position="top-center" toastOptions={{ className: 'rounded-2xl' }} />
       </TooltipProvider>
     </ThemeProvider>
   );

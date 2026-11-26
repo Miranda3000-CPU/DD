@@ -1,12 +1,12 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-import { VitePWA } from "vite-plugin-pwa";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
+import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
+import { VitePWA } from 'vite-plugin-pwa';
 
 const port = Number(process.env.PORT) || 5173;
-const basePath = process.env.BASE_PATH || "/";
+const basePath = process.env.BASE_PATH || '/';
 
 export default defineConfig({
   base: basePath,
@@ -22,9 +22,9 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.svg', 'pwa-512x512.svg'],
       manifest: {
-        name: 'DD - Diário Dela',
+        name: 'DD - Diário da Giovanna',
         short_name: 'DD',
-        description: 'Acompanhe seu ciclo menstrual de forma privada e offline.',
+        description: 'Diário de ciclo da Giovanna, privado e disponível offline.',
         theme_color: '#ff4d6d',
         background_color: '#fff5f7',
         display: 'standalone',
@@ -33,8 +33,13 @@ export default defineConfig({
         scope: basePath,
         icons: [
           { src: 'pwa-192x192.svg', sizes: '192x192', type: 'image/svg+xml' },
-          { src: 'pwa-512x512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
-        ]
+          {
+            src: 'pwa-512x512.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable',
+          },
+        ],
       },
       injectManifest: {
         // Pre-cache all built assets so the SW can serve them offline
@@ -48,28 +53,23 @@ export default defineConfig({
         type: 'module',
       },
     }),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
+    ...(process.env.NODE_ENV !== 'production' && process.env.REPL_ID !== undefined
       ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
+          await import('@replit/vite-plugin-cartographer').then((m) => m.cartographer()),
+          await import('@replit/vite-plugin-dev-banner').then((m) => m.devBanner()),
         ]
       : []),
   ],
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "src"),
-      "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
+      '@': path.resolve(import.meta.dirname, 'src'),
+      '@assets': path.resolve(import.meta.dirname, '..', '..', 'attached_assets'),
     },
-    dedupe: ["react", "react-dom"],
+    dedupe: ['react', 'react-dom'],
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
+    outDir: path.resolve(import.meta.dirname, 'dist'),
     emptyOutDir: true,
     rollupOptions: {
       output: {
@@ -78,7 +78,11 @@ export default defineConfig({
             if (id.includes('@tensorflow/tfjs')) return 'vendor-tfjs';
             if (id.includes('recharts')) return 'vendor-charts';
             // Agrupa framer-motion, lucide e todos os componentes da radix
-            if (id.includes('framer-motion') || id.includes('lucide-react') || id.includes('@radix-ui')) {
+            if (
+              id.includes('framer-motion') ||
+              id.includes('lucide-react') ||
+              id.includes('@radix-ui')
+            ) {
               return 'vendor-ui';
             }
             if (id.includes('react') || id.includes('wouter')) return 'vendor-react';
@@ -90,7 +94,7 @@ export default defineConfig({
   server: {
     port,
     strictPort: true,
-    host: "0.0.0.0",
+    host: '0.0.0.0',
     allowedHosts: true,
     fs: {
       strict: true,
@@ -98,7 +102,7 @@ export default defineConfig({
   },
   preview: {
     port,
-    host: "0.0.0.0",
+    host: '0.0.0.0',
     allowedHosts: true,
   },
 });

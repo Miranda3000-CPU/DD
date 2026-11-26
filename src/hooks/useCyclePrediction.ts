@@ -43,7 +43,7 @@ export function useCyclePrediction(cycleDurations: number[]): CyclePredictionRes
       setError(
         cycleDurations.length === 0
           ? null
-          : `Registre ao menos ${MIN_CYCLES} ciclos para ativar a previsão inteligente.`
+          : `Registre ao menos ${MIN_CYCLES} ciclos para ativar a previsão inteligente.`,
       );
       return;
     }
@@ -89,7 +89,7 @@ export function useCyclePrediction(cycleDurations: number[]): CyclePredictionRes
             units: 1,
             inputShape: [1],
             // Default kernel/bias initializers are fine for linear regression.
-          })
+          }),
         );
         model.compile({
           optimizer: tf.train.adam(0.1),
@@ -121,10 +121,7 @@ export function useCyclePrediction(cycleDurations: number[]): CyclePredictionRes
 
         // ── Denormalise & clamp ─────────────────────────────────────────────
         const predictedDays = Math.round(rawPrediction * yRange + yMin);
-        const clamped = Math.min(
-          Math.max(predictedDays, MIN_PLAUSIBLE_DAYS),
-          MAX_PLAUSIBLE_DAYS
-        );
+        const clamped = Math.min(Math.max(predictedDays, MIN_PLAUSIBLE_DAYS), MAX_PLAUSIBLE_DAYS);
 
         if (!cancelled) {
           setPrediction(clamped);

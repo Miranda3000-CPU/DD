@@ -5,7 +5,12 @@ import { Trash2, Calendar as CalendarIcon, MoreVertical } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 interface HistoryListProps {
   cycles: CycleEntry[];
@@ -45,7 +50,7 @@ export function HistoryList({ cycles, onDelete, isLoading }: HistoryListProps) {
           const startDate = parseISO(cycle.startDate);
           const nextCycle = index > 0 ? cycles[index - 1] : null;
           let cycleLength = '-';
-          
+
           if (nextCycle) {
             const nextStart = parseISO(nextCycle.startDate);
             const diffTime = Math.abs(nextStart.getTime() - startDate.getTime());
@@ -75,15 +80,19 @@ export function HistoryList({ cycles, onDelete, isLoading }: HistoryListProps) {
                       </p>
                     </div>
                   </div>
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      >
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer rounded-lg"
                         onClick={() => cycle.id && onDelete(cycle.id)}
                         data-testid={`delete-cycle-${cycle.id}`}

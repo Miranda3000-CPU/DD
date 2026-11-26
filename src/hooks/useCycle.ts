@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db, CycleEntry, AppSettings } from '../services/db';
-import { getCycleCalculations, calculateAverageCycleLength, computeCycleDurations, CycleCalculations, formatDate } from '../utils/dateUtils';
+import {
+  getCycleCalculations,
+  calculateAverageCycleLength,
+  computeCycleDurations,
+  CycleCalculations,
+  formatDate,
+} from '../utils/dateUtils';
 import { toast } from 'sonner';
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -8,7 +14,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   cycleLength: 28,
   periodDuration: 5,
   notificationsEnabled: false,
-  dailyReminderEnabled: false
+  dailyReminderEnabled: false,
 };
 
 export function useCycle() {
@@ -34,13 +40,17 @@ export function useCycle() {
 
       if (loadedCycles.length > 0) {
         const avgLength = calculateAverageCycleLength(loadedCycles, loadedSettings.cycleLength);
-        const calc = getCycleCalculations(loadedCycles[0], avgLength, loadedSettings.periodDuration);
+        const calc = getCycleCalculations(
+          loadedCycles[0],
+          avgLength,
+          loadedSettings.periodDuration,
+        );
         setCalculations(calc);
       } else {
         setCalculations(null);
       }
     } catch (error) {
-      console.error("Failed to load cycle data", error);
+      console.error('Failed to load cycle data', error);
       toast.error('Erro ao carregar dados do ciclo');
     } finally {
       setIsLoading(false);
@@ -53,10 +63,11 @@ export function useCycle() {
 
   const logToday = async (date: Date = new Date()) => {
     const formattedDate = formatDate(date);
-    
+
     // Check if already exists in the last few days to prevent duplicates
-    const recent = cycles.find(c => {
-      const diff = Math.abs(new Date(c.startDate).getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+    const recent = cycles.find((c) => {
+      const diff =
+        Math.abs(new Date(c.startDate).getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
       return diff < settings.periodDuration;
     });
 
@@ -71,7 +82,7 @@ export function useCycle() {
         periodDurationDays: settings.periodDuration,
         flowIntensity: 'Médio',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
       toast.success('Ciclo registrado com sucesso!');
       await loadData();
@@ -115,10 +126,7 @@ export function useCycle() {
 
   // Sorted oldest → newest durations between consecutive cycles, suitable
   // for feeding into useCyclePrediction.
-  const cycleDurations = useMemo(
-    () => computeCycleDurations(cycles),
-    [cycles]
-  );
+  const cycleDurations = useMemo(() => computeCycleDurations(cycles), [cycles]);
 
   return {
     cycles,

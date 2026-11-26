@@ -1,4 +1,4 @@
-import Dexie, { Table } from "dexie";
+import Dexie, { Table } from 'dexie';
 
 export interface CycleEntry {
   id?: number;
@@ -6,7 +6,7 @@ export interface CycleEntry {
   endDate?: string;
   createdAt: string;
   periodDurationDays?: number;
-  flowIntensity?: "Nenhum" | "Leve" | "Médio" | "Intenso" | string;
+  flowIntensity?: 'Nenhum' | 'Leve' | 'Médio' | 'Intenso' | string;
   symptoms?: string;
   notes?: string;
   updatedAt?: string;
@@ -44,23 +44,28 @@ export class CycloDb extends Dexie {
   dailyLogs!: Table<DailyLogEntry>;
 
   constructor() {
-    super("CycloDB");
+    super('CycloDB');
     this.version(1).stores({
-      cycles: "++id, startDate",
-      settings: "++id"
+      cycles: '++id, startDate',
+      settings: '++id',
     });
-    this.version(2).stores({
-      cycles: "++id, startDate",
-      settings: "++id",
-      dailyLogs: "++id, &date, updatedAt"
-    }).upgrade(async (tx) => {
-      // Preserve all existing cycle/settings records. New fields remain optional
-      // and receive safe defaults at read time, avoiding destructive migration.
-      await tx.table("cycles").toCollection().modify((cycle: CycleEntry) => {
-        if (!cycle.periodDurationDays) cycle.periodDurationDays = 5;
-        if (!cycle.updatedAt) cycle.updatedAt = cycle.createdAt ?? new Date(0).toISOString();
+    this.version(2)
+      .stores({
+        cycles: '++id, startDate',
+        settings: '++id',
+        dailyLogs: '++id, &date, updatedAt',
+      })
+      .upgrade(async (tx) => {
+        // Preserve all existing cycle/settings records. New fields remain optional
+        // and receive safe defaults at read time, avoiding destructive migration.
+        await tx
+          .table('cycles')
+          .toCollection()
+          .modify((cycle: CycleEntry) => {
+            if (!cycle.periodDurationDays) cycle.periodDurationDays = 5;
+            if (!cycle.updatedAt) cycle.updatedAt = cycle.createdAt ?? new Date(0).toISOString();
+          });
       });
-    });
   }
 }
 

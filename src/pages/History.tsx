@@ -98,11 +98,7 @@ export default function HistoryPage() {
         className="flex items-center gap-2 mb-4"
       >
         <div className="flex-1">
-          <SearchBar
-            value={query}
-            onChange={setQuery}
-            placeholder="Buscar por mês ou ano..."
-          />
+          <SearchBar value={query} onChange={setQuery} placeholder="Buscar por mês ou ano..." />
         </div>
         <Button
           variant="outline"

@@ -89,8 +89,8 @@ export function CalendarTour({ visible, onDismiss }: CalendarTourProps) {
                       i === step
                         ? 'w-6 bg-primary'
                         : i < step
-                        ? 'w-3 bg-primary/40'
-                        : 'w-3 bg-muted'
+                          ? 'w-3 bg-primary/40'
+                          : 'w-3 bg-muted'
                     }`}
                   />
                 ))}

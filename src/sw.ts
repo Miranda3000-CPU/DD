@@ -20,21 +20,20 @@ registerRoute(
       networkTimeoutSeconds: 3,
       plugins: [new CacheableResponsePlugin({ statuses: [200] })],
     }),
-    { denylist: [/^\/api\//] }
-  )
+    { denylist: [/^\/api\//] },
+  ),
 );
 
 // --- Static assets: Cache-first (images, fonts, icons) ---
 registerRoute(
-  ({ request }) =>
-    request.destination === 'image' || request.destination === 'font',
+  ({ request }) => request.destination === 'image' || request.destination === 'font',
   new CacheFirst({
     cacheName: 'ciclo-assets-v1',
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 }),
     ],
-  })
+  }),
 );
 
 // -------------------------------------------------------------------
@@ -103,12 +102,10 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close();
   const url: string = event.notification.data?.url ?? self.registration.scope;
   event.waitUntil(
-    self.clients
-      .matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clients) => {
-        const existing = clients.find((c) => c.url.startsWith(self.registration.scope));
-        if (existing) return existing.focus();
-        return self.clients.openWindow(url);
-      })
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const existing = clients.find((c) => c.url.startsWith(self.registration.scope));
+      if (existing) return existing.focus();
+      return self.clients.openWindow(url);
+    }),
   );
 });

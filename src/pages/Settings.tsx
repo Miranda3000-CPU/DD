@@ -16,11 +16,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../components/ui/alert-dialog";
+} from '../components/ui/alert-dialog';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { markSentToday, sendDailyReminderNow, updatePeriodicSync } from '../hooks/useNotificationScheduler';
+import {
+  markSentToday,
+  sendDailyReminderNow,
+  updatePeriodicSync,
+} from '../hooks/useNotificationScheduler';
 import {
   isAndroidWebView,
   requestNotificationPermission,
@@ -29,6 +33,8 @@ import {
   showAndroidNotification,
   scheduleAndroidCyclePrediction,
   downloadBackup,
+  testNotification,
+  selectAndroidBackupFile,
 } from '../native/androidBridge';
 import { exportBackup, importBackup } from '../services/backup';
 import { Download, Upload, ShieldCheck } from 'lucide-react';
@@ -84,7 +90,9 @@ export default function SettingsPage() {
       updateSettings({ notificationsEnabled: enabled });
       setLocalSettings((prev) => ({ ...prev, notificationsEnabled: enabled }));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível atualizar as notificações.");
+      toast.error(
+        error instanceof Error ? error.message : 'Não foi possível atualizar as notificações.',
+      );
     }
   };
 
@@ -97,8 +105,8 @@ export default function SettingsPage() {
         if (isAndroidWebView()) {
           await setAndroidDailyReminder(true, 6, 0);
           await showAndroidNotification(
-            "DD • Diário Dela",
-            "Lembrete diário ativado. Você pode alterar essa opção nas configurações.",
+            'DD • Diário Dela',
+            'Lembrete diário ativado. Você pode alterar essa opção nas configurações.',
           );
         } else {
           markSentToday();
@@ -113,7 +121,20 @@ export default function SettingsPage() {
       updateSettings({ dailyReminderEnabled: enabled });
       setDailyNotif(enabled);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível configurar o lembrete.");
+      toast.error(
+        error instanceof Error ? error.message : 'Não foi possível configurar o lembrete.',
+      );
+    }
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      await testNotification();
+      toast.success('Notificação de teste enviada.');
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Não foi possível testar a notificação.',
+      );
     }
   };
 
@@ -164,7 +185,9 @@ export default function SettingsPage() {
                     <Input
                       type="number"
                       value={localSettings.cycleLength}
-                      onChange={(e) => setLocalSettings({ ...localSettings, cycleLength: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setLocalSettings({ ...localSettings, cycleLength: Number(e.target.value) })
+                      }
                       onBlur={handleSave}
                       className="text-center rounded-xl bg-muted/50 border-transparent focus-visible:ring-primary"
                     />
@@ -187,7 +210,12 @@ export default function SettingsPage() {
                     <Input
                       type="number"
                       value={localSettings.periodDuration}
-                      onChange={(e) => setLocalSettings({ ...localSettings, periodDuration: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setLocalSettings({
+                          ...localSettings,
+                          periodDuration: Number(e.target.value),
+                        })
+                      }
                       onBlur={handleSave}
                       className="text-center rounded-xl bg-muted/50 border-transparent focus-visible:ring-primary"
                     />
@@ -224,7 +252,9 @@ export default function SettingsPage() {
               <div className="h-px bg-border/50" />
 
               {/* Daily 6 AM — disabled unless notifications are on */}
-              <div className={`flex items-center justify-between transition-opacity ${dailyDisabled ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div
+                className={`flex items-center justify-between transition-opacity ${dailyDisabled ? 'opacity-40 pointer-events-none' : ''}`}
+              >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                     <AlarmClock className="w-5 h-5" />
@@ -251,11 +281,30 @@ export default function SettingsPage() {
 
               <div className="h-px bg-border/50" />
 
+              <Button
+                variant="outline"
+                className="w-full rounded-xl"
+                onClick={handleTestNotification}
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                Testar notificação
+              </Button>
+
               {/* Dark mode */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
                     </svg>
                   </div>
@@ -277,28 +326,107 @@ export default function SettingsPage() {
           <Card className="rounded-2xl border border-border/50 bg-card shadow-sm">
             <CardContent className="space-y-4 p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary"><ShieldCheck className="h-5 w-5"/></div>
-                <div><h2 className="font-semibold">Backup privado</h2><p className="text-xs text-muted-foreground">Arquivo criptografado, sem nuvem ou conta</p></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Backup privado</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Arquivo criptografado, sem nuvem ou conta
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">Proteja seus ciclos, registros diários e configurações com uma senha. Guarde o arquivo e a senha em local seguro.</p>
-              <div className="space-y-2"><Label htmlFor="backup-password">Senha do backup (mínimo 10 caracteres)</Label><Input id="backup-password" type="password" autoComplete="new-password" value={backupPassword} onChange={e=>setBackupPassword(e.target.value)} placeholder="Crie uma senha forte"/></div>
+              <p className="text-sm text-muted-foreground">
+                Proteja seus ciclos, registros diários e configurações com uma senha. Guarde o
+                arquivo e a senha em local seguro.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="backup-password">
+                  Senha do backup (mínimo 10 caracteres para exportar)
+                </Label>
+                <Input
+                  id="backup-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={backupPassword}
+                  onChange={(e) => setBackupPassword(e.target.value)}
+                  placeholder="Crie uma senha forte"
+                />
+              </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={async()=>{
-                  setBackupBusy(true);
-                  try { const blob = await exportBackup(backupPassword); await downloadBackup(blob, "diario-dela.ddwebbackup"); toast.success("Backup criptografado exportado."); }
-                  catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao exportar backup."); }
-                  finally { setBackupBusy(false); }
-                }}><Download className="mr-2 h-4 w-4"/>Exportar backup</Button>
-                <Button variant="outline" className="rounded-xl" disabled={backupBusy || backupPassword.length < 10} onClick={()=>{
-                  const picker = document.createElement("input"); picker.type = "file"; picker.accept = ".ddwebbackup,application/octet-stream";
-                  picker.onchange = async () => { const file = picker.files?.[0]; if (!file) return; setBackupBusy(true);
-                    try { const result = await importBackup(file, backupPassword); toast.success("Importado: " + result.cyclesAdded + " ciclos e " + result.logsAdded + " registros diários novos. Dados locais existentes preservados."); window.location.reload(); }
-                    catch (error) { toast.error(error instanceof Error ? error.message : "Falha ao importar backup."); }
-                    finally { setBackupBusy(false); }
-                  }; picker.click();
-                }}><Upload className="mr-2 h-4 w-4"/>Importar backup</Button>
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  disabled={backupBusy || backupPassword.length < 10}
+                  onClick={async () => {
+                    setBackupBusy(true);
+                    try {
+                      const blob = await exportBackup(backupPassword);
+                      await downloadBackup(blob, 'diario-dela.ddwebbackup');
+                      toast.success('Backup criptografado exportado.');
+                    } catch (error) {
+                      toast.error(
+                        error instanceof Error ? error.message : 'Falha ao exportar backup.',
+                      );
+                    } finally {
+                      setBackupBusy(false);
+                    }
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar backup
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  disabled={backupBusy}
+                  onClick={async () => {
+                    setBackupBusy(true);
+                    try {
+                      let file: File | null = null;
+                      if (isAndroidWebView()) {
+                        file = await selectAndroidBackupFile();
+                      } else {
+                        file = await new Promise<File | null>((resolve) => {
+                          const picker = document.createElement('input');
+                          picker.type = 'file';
+                          picker.accept = '.ddwebbackup,.ddbackup,application/octet-stream';
+                          picker.onchange = () => resolve(picker.files?.[0] ?? null);
+                          picker.oncancel = () => resolve(null);
+                          picker.click();
+                        });
+                      }
+                      if (!file) {
+                        toast.info('Nenhum arquivo selecionado.');
+                        return;
+                      }
+                      const result = await importBackup(file, backupPassword);
+                      toast.success(
+                        'Importado: ' +
+                          result.cyclesAdded +
+                          ' ciclos e ' +
+                          result.logsAdded +
+                          ' registros diários novos. Dados locais existentes preservados.',
+                      );
+                      window.location.reload();
+                    } catch (error) {
+                      toast.error(
+                        error instanceof Error ? error.message : 'Falha ao importar backup.',
+                      );
+                    } finally {
+                      setBackupBusy(false);
+                    }
+                  }}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Importar backup
+                </Button>
               </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">A importação mescla registros por data e não apaga dados locais. O backup web usa formato próprio e não é compatível diretamente com o arquivo Android .ddbackup.</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                A importação mescla registros por data e preserva os dados locais. São aceitos
+                backups web (.ddwebbackup) e backups Android legados (.ddbackup); backups
+                criptografados exigem a senha original.
+              </p>
             </CardContent>
           </Card>
           {/* ── Danger zone ────────────────────────────────────── */}
@@ -316,11 +444,14 @@ export default function SettingsPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta ação não pode ser desfeita. Todos os ciclos, registros diários e configurações serão apagados permanentemente deste dispositivo.
+                  Esta ação não pode ser desfeita. Todos os ciclos, registros diários e
+                  configurações serão apagados permanentemente deste dispositivo.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-4">
-                <AlertDialogCancel className="rounded-xl h-12 w-full mt-0">Cancelar</AlertDialogCancel>
+                <AlertDialogCancel className="rounded-xl h-12 w-full mt-0">
+                  Cancelar
+                </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={clearAllData}
                   className="rounded-xl h-12 w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground"

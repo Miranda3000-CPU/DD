@@ -4,7 +4,6 @@ import { ptBR } from 'date-fns/locale';
 import { useCycle } from '../hooks/useCycle';
 import { calculateCycleForecast } from '../utils/cycleEngine';
 import { useNotifications } from '../hooks/useNotifications';
-import { useAppMetaContext } from '../context/AppMetaContext';
 import { CycleCard } from '../components/CycleCard';
 import { FAB } from '../components/FAB';
 import { LogCycleModal } from '../components/LogCycleModal';
@@ -15,22 +14,20 @@ import { Activity, Clock, Sparkles, CalendarHeart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Dashboard() {
-  const { cycles, calculations, isLoading, logToday, settings, avgCycleLength, cycleDurations } = useCycle();
+  const { cycles, calculations, isLoading, logToday, settings, avgCycleLength, cycleDurations } =
+    useCycle();
   const forecast = calculateCycleForecast(cycles);
-  const { userName } = useAppMetaContext();
   const [logModalOpen, setLogModalOpen] = useState(false);
 
   useNotifications(calculations, settings.notificationsEnabled);
 
-  const todayStr = format(new Date(), "EEEE", { locale: ptBR });
+  const todayStr = format(new Date(), 'EEEE', { locale: ptBR });
 
   const hasLoggedToday =
     cycles.length > 0 &&
     Math.abs(new Date(cycles[0].startDate).getTime() - new Date().getTime()) /
       (1000 * 60 * 60 * 24) <
       settings.periodDuration;
-
-  const greeting = userName && userName !== 'você' ? `Olá, ${userName}!` : 'Olá!';
 
   return (
     <PageTransition className="pb-28 pt-6 px-6 max-w-md mx-auto min-h-screen">
@@ -41,7 +38,7 @@ export default function Dashboard() {
           className="text-2xl font-bold text-foreground"
           data-testid="text-greeting"
         >
-          {greeting}
+          Olá, Giovanna!
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, x: -20 }}
@@ -92,7 +89,10 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="bg-card border-border/50 shadow-sm rounded-2xl h-full" data-testid="card-avg-cycle">
+              <Card
+                className="bg-card border-border/50 shadow-sm rounded-2xl h-full"
+                data-testid="card-avg-cycle"
+              >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">
                     <Activity className="w-5 h-5" />
@@ -108,7 +108,10 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Card className="bg-card border-border/50 shadow-sm rounded-2xl h-full" data-testid="card-days-until">
+              <Card
+                className="bg-card border-border/50 shadow-sm rounded-2xl h-full"
+                data-testid="card-days-until"
+              >
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
                   <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-secondary-foreground mb-3">
                     <Clock className="w-5 h-5" />
@@ -128,30 +131,76 @@ export default function Dashboard() {
           <Card className="rounded-3xl border-0 shadow-sm">
             <CardContent className="space-y-4 p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Activity className="h-5 w-5"/></div>
-                <div><h2 className="font-semibold">Sua estimativa de ciclo</h2><p className="text-xs text-muted-foreground">Cálculo estatístico local, sem IA ou envio de dados</p></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Activity className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Sua estimativa de ciclo</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Cálculo estatístico local, sem IA ou envio de dados
+                  </p>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Próxima menstruação</p><p className="mt-1 text-sm font-semibold">{forecast.nextPeriod ? format(forecast.nextPeriod, "dd 'de' MMM", {locale:ptBR}) : 'Registre um ciclo'}</p></div>
-                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Janela estimada</p><p className="mt-1 text-sm font-semibold">{forecast.windowStart && forecast.windowEnd ? `${format(forecast.windowStart,'dd/MM')} – ${format(forecast.windowEnd,'dd/MM')}` : 'Indisponível'}</p></div>
-                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Média histórica</p><p className="mt-1 text-sm font-semibold">{forecast.averageCycleDays} dias</p></div>
-                <div className="rounded-2xl bg-muted/50 p-3"><p className="text-xs text-muted-foreground">Margem estimada</p><p className="mt-1 text-sm font-semibold">±{forecast.uncertaintyDays} dias</p></div>
+                <div className="rounded-2xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Próxima menstruação</p>
+                  <p className="mt-1 text-sm font-semibold">
+                    {forecast.nextPeriod
+                      ? format(forecast.nextPeriod, "dd 'de' MMM", { locale: ptBR })
+                      : 'Registre um ciclo'}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Janela estimada</p>
+                  <p className="mt-1 text-sm font-semibold">
+                    {forecast.windowStart && forecast.windowEnd
+                      ? `${format(forecast.windowStart, 'dd/MM')} – ${format(forecast.windowEnd, 'dd/MM')}`
+                      : 'Indisponível'}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Média histórica</p>
+                  <p className="mt-1 text-sm font-semibold">{forecast.averageCycleDays} dias</p>
+                </div>
+                <div className="rounded-2xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Margem estimada</p>
+                  <p className="mt-1 text-sm font-semibold">±{forecast.uncertaintyDays} dias</p>
+                </div>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">{forecast.confidence}</p>
-              {forecast.attention.length > 0 && <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3">{forecast.attention.map(item => <p key={item} className="text-xs leading-relaxed">{item}</p>)}</div>}
-              {forecast.projections.length > 0 && <div className="space-y-2">
-                <h3 className="text-sm font-semibold">Próximos ciclos · 90 dias</h3>
-                {forecast.projections.map((item, index) => <div key={item.date.toISOString()} className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2">
-                  <span className="text-xs text-muted-foreground">Ciclo {index + 1}</span>
-                  <span className="text-sm font-medium">{format(item.date, "dd/MM/yyyy")}</span>
-                  <span className="text-xs text-muted-foreground">±{item.uncertaintyDays} d</span>
-                </div>)}
-              </div>}
-              <p className="text-xs leading-relaxed text-muted-foreground">A previsão é aproximada, não confirma ovulação e não deve ser usada como método contraceptivo. Consulte o Guia para entender as limitações e as fontes.</p>
+              {forecast.attention.length > 0 && (
+                <div className="space-y-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-3">
+                  {forecast.attention.map((item) => (
+                    <p key={item} className="text-xs leading-relaxed">
+                      {item}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {forecast.projections.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold">Próximos ciclos · 90 dias</h3>
+                  {forecast.projections.map((item, index) => (
+                    <div
+                      key={item.date.toISOString()}
+                      className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2"
+                    >
+                      <span className="text-xs text-muted-foreground">Ciclo {index + 1}</span>
+                      <span className="text-sm font-medium">{format(item.date, 'dd/MM/yyyy')}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ±{item.uncertaintyDays} d
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                A previsão é aproximada, não confirma ovulação e não deve ser usada como método
+                contraceptivo. Consulte o Guia para entender as limitações e as fontes.
+              </p>
             </CardContent>
           </Card>
         )}
-
 
         {/* ── Nudge ────────────────────────────────────────────── */}
         <AnimatePresence>
@@ -163,12 +212,16 @@ export default function Dashboard() {
               exit={{ opacity: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <Card className="bg-primary/5 border-primary/15 rounded-2xl" data-testid="card-ai-nudge">
+              <Card
+                className="bg-primary/5 border-primary/15 rounded-2xl"
+                data-testid="card-ai-nudge"
+              >
                 <CardContent className="p-4 flex gap-3 items-center">
                   <Sparkles className="w-4 h-4 text-primary shrink-0" />
                   <p className="text-xs text-muted-foreground">
                     Registre mais {3 - cycles.length} ciclo
-                    {3 - cycleDurations.length > 1 ? 's' : ''} para melhorar a estimativa estatística. As previsões continuam aproximadas.
+                    {3 - cycleDurations.length > 1 ? 's' : ''} para melhorar a estimativa
+                    estatística. As previsões continuam aproximadas.
                   </p>
                 </CardContent>
               </Card>

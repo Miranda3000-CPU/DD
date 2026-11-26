@@ -1,5 +1,5 @@
-import { db, type AppSettings, type CycleEntry, type DailyLogEntry } from "../services/db";
-import { isAndroidWebView, requestAndroid } from "./androidBridge";
+import { db, type AppSettings, type CycleEntry, type DailyLogEntry } from '../services/db';
+import { isAndroidWebView, requestAndroid } from './androidBridge';
 
 interface NativeCycle {
   uuid?: string;
@@ -43,9 +43,7 @@ function median(values: number[]): number {
   if (!values.length) return 5;
   const sorted = [...values].sort((a, b) => a - b);
   const middle = Math.floor(sorted.length / 2);
-  return Math.round(sorted.length % 2
-    ? sorted[middle]
-    : (sorted[middle - 1] + sorted[middle]) / 2);
+  return Math.round(sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2);
 }
 
 /**
@@ -58,31 +56,31 @@ export async function migrateNativeDataAtStartup(): Promise<void> {
   if (!isAndroidWebView()) return;
 
   try {
-    const legacy = await requestAndroid<NativeLegacyData>("getLegacyData");
+    const legacy = await requestAndroid<NativeLegacyData>('getLegacyData');
     if (legacy.migrated) return;
 
     const nativeCycles = Array.isArray(legacy.cycles) ? legacy.cycles : [];
     const nativeLogs = Array.isArray(legacy.dailyLogs) ? legacy.dailyLogs : [];
     const preferences = legacy.preferences ?? {};
 
-    await db.transaction("rw", db.cycles, db.dailyLogs, db.settings, async () => {
+    await db.transaction('rw', db.cycles, db.dailyLogs, db.settings, async () => {
       for (const incoming of nativeCycles) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(incoming.startDate || "")) continue;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(incoming.startDate || '')) continue;
 
         const createdAt = isoDateTime(incoming.createdAtEpochMilli);
         const updatedAt = isoDateTime(incoming.updatedAtEpochMilli);
-        const candidate: Omit<CycleEntry, "id"> = {
+        const candidate: Omit<CycleEntry, 'id'> = {
           startDate: incoming.startDate,
           periodDurationDays: incoming.periodLengthDays ?? 5,
-          flowIntensity: incoming.flowIntensity ?? "Médio",
-          symptoms: incoming.symptoms ?? "",
-          notes: incoming.notes ?? "",
+          flowIntensity: incoming.flowIntensity ?? 'Médio',
+          symptoms: incoming.symptoms ?? '',
+          notes: incoming.notes ?? '',
           createdAt,
           updatedAt,
           legacyUuid: incoming.uuid,
         };
 
-        const existing = await db.cycles.where("startDate").equals(incoming.startDate).first();
+        const existing = await db.cycles.where('startDate').equals(incoming.startDate).first();
         if (!existing) {
           await db.cycles.add(candidate);
         } else if (updatedAt > (existing.updatedAt ?? existing.createdAt)) {
@@ -91,24 +89,24 @@ export async function migrateNativeDataAtStartup(): Promise<void> {
       }
 
       for (const incoming of nativeLogs) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(incoming.date || "")) continue;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(incoming.date || '')) continue;
 
         const updatedAt = isoDateTime(incoming.updatedAtEpochMilli);
-        const candidate: Omit<DailyLogEntry, "id"> = {
+        const candidate: Omit<DailyLogEntry, 'id'> = {
           date: incoming.date,
           flowIntensity: incoming.flowIntensity ?? undefined,
           painLevel: incoming.painLevel ?? undefined,
-          symptoms: incoming.symptoms ?? "",
+          symptoms: incoming.symptoms ?? '',
           mood: incoming.mood ?? undefined,
           energyLevel: incoming.energyLevel ?? undefined,
           sleepQuality: incoming.sleepQuality ?? undefined,
           cervicalMucus: incoming.cervicalMucus ?? undefined,
-          notes: incoming.notes ?? "",
+          notes: incoming.notes ?? '',
           updatedAt,
           legacyUuid: incoming.uuid,
         };
 
-        const existing = await db.dailyLogs.where("date").equals(incoming.date).first();
+        const existing = await db.dailyLogs.where('date').equals(incoming.date).first();
         if (!existing) {
           await db.dailyLogs.add(candidate);
         } else if (updatedAt > existing.updatedAt) {
@@ -128,31 +126,31 @@ export async function migrateNativeDataAtStartup(): Promise<void> {
           cycleLength: 28,
           periodDuration,
           notificationsEnabled:
-            preferences.notifications_enabled === "true" &&
+            preferences.notifications_enabled === 'true' &&
             legacy.notificationPermissionGranted !== false,
-          dailyReminderEnabled: preferences.notify_daily_reminder === "true",
+          dailyReminderEnabled: preferences.notify_daily_reminder === 'true',
         };
         await db.settings.put(settings);
       }
     });
 
-    // The user-facing name and one-time consent flags were stored separately
-    // from Room. Copy them only when this WebView profile has no value yet.
-    const userName = legacy.userName || preferences.user_name;
-    if (userName && !localStorage.getItem("ciclo_username")) {
-      localStorage.setItem("ciclo_username", userName);
+    if (
+      preferences.privacy_notice_dismissed === 'true' &&
+      !localStorage.getItem('ciclo_privacy_seen')
+    ) {
+      localStorage.setItem('ciclo_privacy_seen', '1');
     }
-    if (preferences.privacy_notice_dismissed === "true" && !localStorage.getItem("ciclo_privacy_seen")) {
-      localStorage.setItem("ciclo_privacy_seen", "1");
-    }
-    if (preferences.calendar_tour_dismissed === "true" && !localStorage.getItem("ciclo_calendar_tour_seen")) {
-      localStorage.setItem("ciclo_calendar_tour_seen", "1");
+    if (
+      preferences.calendar_tour_dismissed === 'true' &&
+      !localStorage.getItem('ciclo_calendar_tour_seen')
+    ) {
+      localStorage.setItem('ciclo_calendar_tour_seen', '1');
     }
 
     // Mark the migration only after IndexedDB commits successfully.
-    await requestAndroid("completeLegacyMigration");
+    await requestAndroid('completeLegacyMigration');
   } catch {
     // Do not log personal health data. The next launch retries the idempotent merge.
-    console.warn("A migração local do DD será tentada novamente na próxima abertura.");
+    console.warn('A migração local do DD será tentada novamente na próxima abertura.');
   }
 }

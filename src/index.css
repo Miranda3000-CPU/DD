@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -50,13 +50,13 @@
 }
 
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(0, 0, 0, 0.1);
+  --badge-outline: rgba(0, 0, 0, 0.05);
 
   --opaque-button-border-intensity: -8;
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: rgba(0, 0, 0, 0.03);
+  --elevate-2: rgba(0, 0, 0, 0.08);
 
   --background: 350 100% 99%;
   --foreground: 340 10% 15%;
@@ -67,7 +67,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 340 10% 15%;
   --popover-border: 350 20% 90%;
-  
+
   --primary: 350 84% 60%;
   --primary-foreground: 0 0% 100%;
   --secondary: 210 60% 95%;
@@ -80,7 +80,7 @@
   --destructive-foreground: 0 0% 100%;
   --input: 350 20% 90%;
   --ring: 350 84% 60%;
-  
+
   --sidebar: 350 100% 99%;
   --sidebar-foreground: 340 10% 15%;
   --sidebar-border: 350 20% 90%;
@@ -96,11 +96,12 @@
   --chart-4: 40 80% 60%;
   --chart-5: 160 60% 60%;
 
-  --app-font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --app-font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
   --radius: 1rem;
-  
+
   --shadow-2xs: 0px 2px 0px 0px hsl(350 84% 60% / 0.05);
   --shadow-xs: 0px 2px 0px 0px hsl(350 84% 60% / 0.05);
   --shadow-sm: 0px 2px 0px 0px hsl(350 84% 60% / 0.05), 0px 1px 2px -1px hsl(350 84% 60% / 0.05);
@@ -113,29 +114,43 @@
   --spacing: 0.25rem;
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
-  --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --sidebar-primary-border: hsl(
+    from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
   --sidebar-accent-border: hsl(var(--sidebar-accent));
-  --sidebar-accent-border: hsl(from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --sidebar-accent-border: hsl(
+    from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
   --primary-border: hsl(var(--primary));
-  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --primary-border: hsl(
+    from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
   --secondary-border: hsl(var(--secondary));
-  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --secondary-border: hsl(
+    from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
   --muted-border: hsl(var(--muted));
-  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --muted-border: hsl(
+    from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
   --accent-border: hsl(var(--accent));
-  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --accent-border: hsl(
+    from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
   --destructive-border: hsl(var(--destructive));
-  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+  --destructive-border: hsl(
+    from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
 }
 
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255, 255, 255, 0.1);
+  --badge-outline: rgba(255, 255, 255, 0.05);
 
   --opaque-button-border-intensity: 9;
 
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255, 255, 255, 0.04);
+  --elevate-2: rgba(255, 255, 255, 0.09);
 
   --background: 340 15% 10%;
   --foreground: 350 20% 95%;
@@ -146,7 +161,7 @@
   --popover: 340 12% 15%;
   --popover-foreground: 350 20% 95%;
   --popover-border: 340 15% 20%;
-  
+
   --primary: 350 84% 65%;
   --primary-foreground: 0 0% 100%;
   --secondary: 210 60% 25%;
@@ -159,7 +174,7 @@
   --destructive-foreground: 0 0% 100%;
   --input: 340 15% 25%;
   --ring: 350 84% 65%;
-  
+
   --sidebar: 340 15% 10%;
   --sidebar-foreground: 350 20% 95%;
   --sidebar-border: 340 15% 20%;
@@ -196,7 +211,7 @@
 }
 
 @layer utilities {
-  input[type="search"]::-webkit-search-cancel-button {
+  input[type='search']::-webkit-search-cancel-button {
     @apply hidden;
   }
   [contenteditable][data-placeholder]:empty::before {
@@ -204,12 +219,14 @@
     color: hsl(var(--muted-foreground));
     pointer-events: none;
   }
-  .no-default-hover-elevate {}
-  .no-default-active-elevate {}
+  .no-default-hover-elevate {
+  }
+  .no-default-active-elevate {
+  }
 
   .toggle-elevate::before,
   .toggle-elevate-2::before {
-    content: "";
+    content: '';
     pointer-events: none;
     position: absolute;
     inset: 0px;
@@ -233,7 +250,7 @@
   .active-elevate:not(.no-default-active-elevate)::after,
   .hover-elevate-2:not(.no-default-hover-elevate)::after,
   .active-elevate-2:not(.no-default-active-elevate)::after {
-    content: "";
+    content: '';
     pointer-events: none;
     position: absolute;
     inset: 0px;
@@ -263,15 +280,11 @@
  */
 :root {
   --radius: 1.25rem;
-  --shadow-soft-ui:
-    10px 10px 24px hsl(350 28% 78% / 0.24),
-    -10px -10px 24px hsl(0 0% 100% / 0.92);
+  --shadow-soft-ui: 10px 10px 24px hsl(350 28% 78% / 0.24), -10px -10px 24px hsl(0 0% 100% / 0.92);
   --shadow-soft-ui-inset:
-    inset 3px 3px 8px hsl(350 28% 78% / 0.18),
-    inset -3px -3px 8px hsl(0 0% 100% / 0.88);
+    inset 3px 3px 8px hsl(350 28% 78% / 0.18), inset -3px -3px 8px hsl(0 0% 100% / 0.88);
   --shadow-soft-ui-raised:
-    5px 5px 12px hsl(350 28% 78% / 0.22),
-    -5px -5px 12px hsl(0 0% 100% / 0.9);
+    5px 5px 12px hsl(350 28% 78% / 0.22), -5px -5px 12px hsl(0 0% 100% / 0.9);
 }
 
 html {
@@ -287,83 +300,92 @@ body {
   letter-spacing: -0.012em;
 }
 
-button, input, textarea, select {
+button,
+input,
+textarea,
+select {
   font: inherit;
 }
 
-button, [role="button"], a {
+button,
+[role='button'],
+a {
   -webkit-tap-highlight-color: transparent;
 }
 
-:where(button, [role="button"], a, input, textarea, select):focus-visible {
+:where(button, [role='button'], a, input, textarea, select):focus-visible {
   outline: 3px solid hsl(var(--ring) / 0.45);
   outline-offset: 3px;
 }
 
 /* Softer, layered surfaces without changing component markup. */
-:where([class*="rounded-xl"], [class*="rounded-2xl"], [class*="rounded-3xl"]):not(button):not([role="button"]) {
+:where([class*='rounded-xl'], [class*='rounded-2xl'], [class*='rounded-3xl']):not(button):not(
+    [role='button']
+  ) {
   transition:
     box-shadow 180ms ease,
     border-color 180ms ease,
     background-color 180ms ease;
 }
 
-:where([class*="bg-card"], [class*="bg-white"], [class*="bg-background"])[class*="rounded-2xl"],
-:where([class*="bg-card"], [class*="bg-white"], [class*="bg-background"])[class*="rounded-3xl"] {
+:where([class*='bg-card'], [class*='bg-white'], [class*='bg-background'])[class*='rounded-2xl'],
+:where([class*='bg-card'], [class*='bg-white'], [class*='bg-background'])[class*='rounded-3xl'] {
   box-shadow: var(--shadow-soft-ui);
   border-color: hsl(var(--border) / 0.72);
 }
 
-:where([class*="border"])[class*="rounded-2xl"]:not(button),
-:where([class*="border"])[class*="rounded-3xl"]:not(button) {
+:where([class*='border'])[class*='rounded-2xl']:not(button),
+:where([class*='border'])[class*='rounded-3xl']:not(button) {
   border-color: hsl(var(--border) / 0.72);
 }
 
-:where(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+:where(input:not([type='checkbox']):not([type='radio']), textarea, select) {
   border-radius: 0.9rem;
   background-color: hsl(var(--background) / 0.78);
   box-shadow: var(--shadow-soft-ui-inset);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-:where(input:not([type="checkbox"]):not([type="radio"]), textarea, select):focus {
+:where(input:not([type='checkbox']):not([type='radio']), textarea, select):focus {
   border-color: hsl(var(--primary) / 0.55);
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
   outline: none;
 }
 
-:where(button, [role="button"]):not(:disabled) {
+:where(button, [role='button']):not(:disabled) {
   transition:
     transform 150ms ease,
     box-shadow 180ms ease,
     filter 180ms ease;
 }
 
-:where(button, [role="button"]):not(:disabled):active {
+:where(button, [role='button']):not(:disabled):active {
   transform: translateY(1px) scale(0.99);
 }
 
-:where(button, [role="button"]):disabled {
+:where(button, [role='button']):disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-:where([class*="bg-primary"])[class*="rounded"] {
+:where([class*='bg-primary'])[class*='rounded'] {
   box-shadow:
     0 5px 14px hsl(var(--primary) / 0.22),
     inset 0 1px 0 hsl(0 0% 100% / 0.22);
 }
 
-:where([class*="bg-muted"], [class*="bg-secondary"])[class*="rounded"] {
+:where([class*='bg-muted'], [class*='bg-secondary'])[class*='rounded'] {
   border-color: transparent;
 }
 
-:where(nav, [role="navigation"]) {
+:where(nav, [role='navigation']) {
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }
 
-:where([class*="fixed"][class*="bottom-0"]) {
+:where([class*='fixed'][class*='bottom-0']) {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -378,8 +400,10 @@ button, [role="button"], a {
     hsl(var(--background));
 }
 
-.dark :where([class*="bg-card"], [class*="bg-white"], [class*="bg-background"])[class*="rounded-2xl"],
-.dark :where([class*="bg-card"], [class*="bg-white"], [class*="bg-background"])[class*="rounded-3xl"] {
+.dark
+  :where([class*='bg-card'], [class*='bg-white'], [class*='bg-background'])[class*='rounded-2xl'],
+.dark
+  :where([class*='bg-card'], [class*='bg-white'], [class*='bg-background'])[class*='rounded-3xl'] {
   box-shadow:
     8px 8px 20px hsl(0 0% 0% / 0.18),
     -5px -5px 16px hsl(350 25% 24% / 0.12);
@@ -387,8 +411,12 @@ button, [role="button"], a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;

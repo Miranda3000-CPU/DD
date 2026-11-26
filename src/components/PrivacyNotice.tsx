@@ -40,14 +40,12 @@ export function PrivacyNotice({ visible, onAcknowledge }: PrivacyNoticeProps) {
                 <Shield className="w-6 h-6" />
               </div>
 
-              <h2 className="text-xl font-bold text-foreground mb-2">
-                Seus dados ficam com você
-              </h2>
+              <h2 className="text-xl font-bold text-foreground mb-2">Seus dados ficam com você</h2>
 
               <p className="text-sm text-muted-foreground leading-relaxed mb-1">
                 O <strong className="text-foreground">Diário Dela</strong> foi desenvolvido por{' '}
-                <strong className="text-foreground">Jeiel Miranda</strong> e não coleta
-                nenhum dado pessoal. Tudo é armazenado exclusivamente no seu dispositivo,
+                <strong className="text-foreground">Jeiel Miranda</strong> para você, Giovanna, e
+                não coleta nenhum dado pessoal. Tudo é armazenado exclusivamente no seu dispositivo,
                 sem servidores externos.
               </p>
 

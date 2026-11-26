@@ -83,7 +83,10 @@ export function InstallPrompt() {
                 </span>
                 <button
                   className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground"
-                  onClick={(e) => { e.stopPropagation(); dismiss(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dismiss();
+                  }}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -138,8 +141,8 @@ export function InstallPrompt() {
                           text: (
                             <>
                               Confirme tocando em{' '}
-                              <strong className="text-foreground">"Adicionar"</strong> — o
-                              ícone aparecerá na tela inicial
+                              <strong className="text-foreground">"Adicionar"</strong> — o ícone
+                              aparecerá na tela inicial
                             </>
                           ),
                         },

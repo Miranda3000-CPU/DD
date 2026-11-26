@@ -1,77 +1,13 @@
-# Ciclo - Acompanhamento Menstrual Privado
+# Diário Dela
 
-O **Ciclo** é um aplicativo web progressivo (PWA) projetado para ajudar no acompanhamento do ciclo menstrual com foco absoluto em privacidade e autonomia do usuário. Diferente de outras soluções, o Ciclo não possui servidores: todos os seus dados permanecem exclusivamente no seu dispositivo.
+Diário de ciclo e bem-estar que Jeiel desenvolveu para sua noiva, Giovanna. O site e o aplicativo Android compartilham a interface e guardam os registros no dispositivo. As previsões de ciclo são estimativas educativas.
 
-## 🛡️ Privacidade em Primeiro Lugar
+[Abrir o diário](https://dd.jeielmiranda.com.br) · [Documentação e stack](https://github.com/Miranda3000-CPU/DD/wiki) · [Baixar artefatos de uma execução do GitHub Actions](https://github.com/Miranda3000-CPU/DD/actions/workflows/ci.yml)
 
-A filosofia central do projeto é que seus dados de saúde são íntimos e pertencem apenas a você.
-- **Armazenamento Local:** Utiliza IndexedDB (via Dexie.js) para salvar informações diretamente no navegador.
-- **Sem Nuvem:** Não há coleta de dados, contas ou sincronização com servidores externos.
-- **Transparência:** O código é focado em processamento *client-side*.
+## Desenvolvimento
 
-## ✨ Funcionalidades
+Na raiz, execute `pnpm install --frozen-lockfile` e `pnpm dev` para iniciar o site. Use `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test` e `pnpm build` para validá-lo.
 
-- **Dashboard Inteligente:** Visualização clara do status atual do ciclo e dias restantes para o próximo período.
-- **Previsão com IA:** Utiliza um modelo de regressão linear treinado localmente no dispositivo para prever a duração dos próximos ciclos com base no seu histórico.
-- **PWA (Progressive Web App):** Pode ser instalado no Android (via Chrome) e iOS (via Safari), funcionando perfeitamente sem conexão com a internet.
-- **Notificações:** Sistema de lembretes diários para manter o acompanhamento em dia.
-- **Histórico e Calendário:** Gestão completa de registros passados com opção de exclusão e edição.
-- **Interface Adaptável:** Suporte a modo claro (Light) e escuro (Dark) com animações fluidas usando Framer Motion.
+Em `android/`, execute `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` para validar o aplicativo Kotlin e gerar o APK em `app/build/outputs/apk/debug/`.
 
-## 🚀 Tecnologias Utilizadas
-
-O projeto foi construído com o que há de mais moderno no ecossistema web:
-
-- **Framework:** [React](https://reactjs.org/) + [Vite](https://vitejs.dev/)
-- **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
-- **Estilização:** [Tailwind CSS](https://tailwindcss.com/)
-- **Componentes UI:** Radix UI + Lucide React
-- **Animações:** [Framer Motion](https://www.framer.com/motion/)
-- **Banco de Dados:** [Dexie.js](https://dexie.org/) (IndexedDB)
-- **PWA:** [Vite PWA Plugin](https://vite-pwa-org.netlify.app/)
-- **IA/Matemática:** Regressão linear simples para predições no dispositivo.
-
-## 📦 Instalação e Desenvolvimento
-
-Para rodar o projeto localmente:
-
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/ciclo.git
-   ```
-2. Instale as dependências:
-   ```bash
-   pnpm install
-   ```
-3. Inicie o servidor de desenvolvimento:
-   ```bash
-   pnpm dev
-   ```
-4. Para build de produção (gerar PWA):
-   ```bash
-   pnpm build
-   ```
-
-## ✒️ Autor
-
-Desenvolvido por **Jeiel Miranda**. Conheça mais em [jeielmiranda.com.br](https://jeielmiranda.com.br).
-
----
-*Este projeto foi desenvolvido com foco em acessibilidade e performance, garantindo uma experiência nativa diretamente no navegador.*
-
-## Recursos locais e modo offline
-
-- Diário de bem-estar para fluxo, dor, sintomas, humor, energia, sono, muco cervical e anotações.
-- Estimativa estatística transparente do ciclo, margem de incerteza e projeções de até 90 dias.
-- Guia educativo com referências clínicas/acadêmicas incluídas no pacote da aplicação.
-- Backup local criptografado por senha usando PBKDF2-HMAC-SHA-256 e AES-256-GCM; importação com mesclagem sem apagar registros locais existentes.
-- O aplicativo é uma PWA: após abrir online e instalar o service worker, páginas e recursos pré-armazenados ficam disponíveis offline. A primeira instalação exige conexão e HTTPS/localhost.
-
-Para validar modo offline, siga [docs/OFFLINE-VALIDATION.md](docs/OFFLINE-VALIDATION.md). As estimativas são educativas e não devem ser usadas como método contraceptivo nem substituem orientação profissional.
-
-
-## Integração com o aplicativo Android
-
-O APK Android usa o mesmo site oficial em uma WebView, com integração nativa para notificações, alarmes e exportação de backups. A interface, navegação e regras de negócio são mantidas no projeto web; o PWA continua disponível diretamente pelo navegador.
-
-Detalhes de arquitetura, segurança, migração do banco Room legado e limites de armazenamento entre PWA e APK estão em [docs/ANDROID-WEBVIEW.md](docs/ANDROID-WEBVIEW.md). A migração é local e preserva o Room original. Chrome/PWA e WebView mantêm perfis IndexedDB isolados, portanto a transferência entre eles é feita pelo backup criptografado `.ddwebbackup`, não por sincronização automática.
+A [integração Android](https://github.com/Miranda3000-CPU/DD/wiki/ANDROID-WEBVIEW) descreve notificações, arquivos e migração dos dados antigos. Para testar o site sem conexão após a primeira abertura, siga o [roteiro de validação offline](https://github.com/Miranda3000-CPU/DD/wiki/OFFLINE-VALIDATION).

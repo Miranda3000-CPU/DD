@@ -36,10 +36,7 @@ export default function CalendarPage() {
           <CalendarView cycles={cycles} settings={settings} />
 
           {/* One-time color legend tour — shown below the calendar */}
-          <CalendarTour
-            visible={!calendarTourSeen}
-            onDismiss={acknowledgeCalendarTour}
-          />
+          <CalendarTour visible={!calendarTourSeen} onDismiss={acknowledgeCalendarTour} />
         </>
       )}
     </PageTransition>

@@ -7,3 +7,4 @@ O Diário Dela é o diário pessoal de Giovanna. Preserve os textos em portuguê
 - Use dados fictícios nos testes. Mantenha registros pessoais, backups reais e chaves de assinatura fora do Git.
 - Confira os scripts de qualidade em `package.json` e execute as verificações da GitHub Actions antes de entregar mudanças. No Android, use o Gradle Wrapper do repositório.
 - Atualize a página Stack da wiki quando uma mudança afetar a arquitetura, a persistência ou os requisitos de build.
+- Distribua o aplicativo pessoal de Giovanna como APK da variante debug, assinado com a chave de debug estável do DD. Use `:app:assembleDebug` e entregue o APK pelo GitHub Actions. Builds de release e publicação na Play Store estão fora do escopo do projeto.

@@ -41,3 +41,5 @@ Thumbs.db
 .replit
 .replit-artifact/
 .upm/
+# Cache do gerador de modelos 3D
+__pycache__/

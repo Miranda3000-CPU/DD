@@ -43,7 +43,7 @@ export default defineConfig({
       },
       injectManifest: {
         // Pre-cache all built assets so the SW can serve them offline
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot,webp}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot,webp,glb}'],
         // Aumenta o limite de cache para 4MB para acomodar o bundle atual
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
@@ -75,6 +75,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.endsWith('/three/build/three.core.js')) return 'avatar-core';
             if (id.includes('@tensorflow/tfjs')) return 'vendor-tfjs';
             if (id.includes('recharts')) return 'vendor-charts';
             // Agrupa framer-motion, lucide e todos os componentes da radix

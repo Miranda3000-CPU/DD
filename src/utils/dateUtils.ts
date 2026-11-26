@@ -7,9 +7,9 @@ import {
   subDays,
   startOfDay,
 } from 'date-fns';
-import { CycleEntry } from '../services/db';
+import type { CycleEntry } from '../services/db';
 
-export type Phase = 'Menstrual' | 'Fértil' | 'Ovulação' | 'Neutro';
+export type Phase = 'Menstrual' | 'Folicular' | 'Ovulação' | 'Lútea' | 'Neutro';
 
 /**
  * Converts an array of CycleEntry records into an array of cycle durations
@@ -67,6 +67,7 @@ export interface CycleCalculations {
   daysUntilNextPeriod: number;
   ovulationDate: Date;
   fertileWindow: { start: Date; end: Date };
+  isInFertileWindow: boolean;
   cycleDay: number;
 }
 
@@ -93,14 +94,17 @@ export function getCycleCalculations(
 
   let currentPhase: Phase = 'Neutro';
 
-  if (cycleDay > 0 && cycleDay <= periodDuration) {
-    currentPhase = 'Menstrual';
-  } else if (
-    isWithinInterval(today, { start: subDays(ovulationDate, 1), end: addDays(ovulationDate, 1) })
-  ) {
-    currentPhase = 'Ovulação';
-  } else if (isWithinInterval(today, { start: fertileWindow.start, end: fertileWindow.end })) {
-    currentPhase = 'Fértil';
+  // A previsão não inicia um novo ciclo até que outro início seja registrado.
+  if (cycleDay >= 1 && daysUntilNextPeriod > 0) {
+    if (cycleDay <= periodDuration) {
+      currentPhase = 'Menstrual';
+    } else if (
+      isWithinInterval(today, { start: subDays(ovulationDate, 1), end: addDays(ovulationDate, 1) })
+    ) {
+      currentPhase = 'Ovulação';
+    } else {
+      currentPhase = today < ovulationDate ? 'Folicular' : 'Lútea';
+    }
   }
 
   return {
@@ -109,6 +113,7 @@ export function getCycleCalculations(
     daysUntilNextPeriod,
     ovulationDate,
     fertileWindow,
+    isInFertileWindow: isWithinInterval(today, fertileWindow),
     cycleDay,
   };
 }

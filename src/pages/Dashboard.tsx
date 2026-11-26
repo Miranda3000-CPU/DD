@@ -4,6 +4,7 @@ import { ptBR } from 'date-fns/locale';
 import { useCycle } from '../hooks/useCycle';
 import { calculateCycleForecast } from '../utils/cycleEngine';
 import { useNotifications } from '../hooks/useNotifications';
+import { CycleAvatar } from '../components/avatar/CycleAvatar';
 import { CycleCard } from '../components/CycleCard';
 import { FAB } from '../components/FAB';
 import { LogCycleModal } from '../components/LogCycleModal';
@@ -31,23 +32,31 @@ export default function Dashboard() {
 
   return (
     <PageTransition className="pb-28 pt-6 px-6 max-w-md mx-auto min-h-screen">
-      <header className="mb-8">
-        <motion.h1
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="text-2xl font-bold text-foreground"
-          data-testid="text-greeting"
-        >
-          Olá, Giovanna!
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-muted-foreground capitalize"
-        >
-          Hoje é {todayStr}
-        </motion.p>
+      <header className="mb-5 grid grid-cols-[minmax(0,1fr)_minmax(0,46%)] items-center gap-1">
+        <div>
+          <motion.h1
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-2xl font-bold text-foreground"
+            data-testid="text-greeting"
+          >
+            Olá, Giovanna!
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-muted-foreground capitalize"
+          >
+            Hoje é {todayStr}
+          </motion.p>
+        </div>
+        <div className="h-52 min-w-0 sm:h-60">
+          <CycleAvatar
+            currentPhase={calculations?.currentPhase ?? null}
+            cycleDay={calculations?.cycleDay ?? null}
+          />
+        </div>
       </header>
 
       <div className="space-y-6">

@@ -1,4 +1,4 @@
-import { Droplets, Wind, Star, Sun, Calendar } from 'lucide-react';
+import { Droplets, Wind, Star, Sun, Calendar, Moon } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { CycleCalculations, Phase } from '../utils/dateUtils';
 import { cn } from '../lib/utils';
@@ -20,10 +20,10 @@ const PHASE_CONFIG: Record<
     bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20',
   },
-  Fértil: {
+  Folicular: {
     icon: Wind,
     color: 'text-secondary-foreground',
-    label: 'Fértil',
+    label: 'Folicular',
     bgColor: 'bg-secondary',
     borderColor: 'border-secondary/30',
   },
@@ -33,6 +33,13 @@ const PHASE_CONFIG: Record<
     label: 'Ovulação',
     bgColor: 'bg-[#9b5de5]/10',
     borderColor: 'border-[#9b5de5]/20',
+  },
+  Lútea: {
+    icon: Moon,
+    color: 'text-violet-700 dark:text-violet-300',
+    label: 'Lútea',
+    bgColor: 'bg-violet-500/10',
+    borderColor: 'border-violet-500/20',
   },
   Neutro: {
     icon: Sun,
@@ -103,6 +110,10 @@ export function CycleCard({ calculations, isLoading }: CycleCardProps) {
           >
             Fase {config.label}
           </motion.h2>
+
+          {calculations.currentPhase === 'Folicular' && calculations.isInFertileWindow && (
+            <p className="mb-1 text-sm text-muted-foreground">Janela fértil estimada</p>
+          )}
 
           <motion.div
             initial={{ y: 10, opacity: 0 }}

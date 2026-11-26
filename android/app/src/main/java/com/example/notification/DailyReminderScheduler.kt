@@ -5,7 +5,6 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import com.example.util.UserPreferencesManager
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -22,21 +21,12 @@ object DailyReminderScheduler {
         if (!next.isAfter(now)) next = next.plusDays(1)
         val firstTrigger = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setInexactRepeating(
-                AlarmManager.RTC_WAKEUP,
-                firstTrigger,
-                AlarmManager.INTERVAL_DAY,
-                pendingIntent,
-            )
-        } else {
-            alarmManager.setRepeating(
-                AlarmManager.RTC_WAKEUP,
-                firstTrigger,
-                AlarmManager.INTERVAL_DAY,
-                pendingIntent,
-            )
-        }
+        alarmManager.setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            firstTrigger,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent,
+        )
     }
 
     fun cancel(context: Context) {
@@ -81,7 +71,7 @@ class DailyReminderReceiver : BroadcastReceiver() {
         NotificationHelper.showNotification(
             context = context,
             title = "DD • Diário Dela",
-            message = "Bom dia! Reserve um momento para registrar como você está se sentindo.",
+            message = "Bom dia, Giovanna! Reserve um momento para registrar como você está se sentindo.",
             channelId = NotificationHelper.CHANNEL_REMINDERS,
             notificationId = NotificationHelper.NOTIFICATION_ID_REMINDER,
         )

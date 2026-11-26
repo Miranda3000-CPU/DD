@@ -87,6 +87,7 @@ class NotificationHelperTest {
 
     @Test
     fun testTestNotificationSent() {
+        UserPreferencesManager.setUserName(context, "Nome do backup legado")
         UserPreferencesManager.setNotificationsEnabled(context, true)
         UserPreferencesManager.setPrivateNotifications(context, false)
         notificationManager.cancelAll()

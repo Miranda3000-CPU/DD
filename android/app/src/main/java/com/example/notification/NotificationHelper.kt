@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.net.Uri
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.MainActivity
@@ -31,39 +30,37 @@ object NotificationHelper {
     const val ALARM_REQUEST_REMINDER = 2002
 
     fun createNotificationChannels(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val soundUri = Uri.parse("android.resource://${context.packageName}/${R.raw.dd_notification}")
-            val audioAttributes = AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                .build()
+        val soundUri = Uri.parse("android.resource://${context.packageName}/${R.raw.dd_notification}")
+        val audioAttributes = AudioAttributes.Builder()
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .build()
 
-            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            // 1. Predictions Channel
-            val predictionsChannel = NotificationChannel(
-                CHANNEL_PREDICTIONS,
-                context.getString(R.string.notification_channel_predictions_name),
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = context.getString(R.string.notification_channel_predictions_desc)
-                enableVibration(true)
-                setSound(soundUri, audioAttributes)
-            }
-            manager.createNotificationChannel(predictionsChannel)
-
-            // 2. Reminders Channel
-            val remindersChannel = NotificationChannel(
-                CHANNEL_REMINDERS,
-                context.getString(R.string.notification_channel_reminders_name),
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = context.getString(R.string.notification_channel_reminders_desc)
-                enableVibration(true)
-                setSound(soundUri, audioAttributes)
-            }
-            manager.createNotificationChannel(remindersChannel)
+        // 1. Predictions Channel
+        val predictionsChannel = NotificationChannel(
+            CHANNEL_PREDICTIONS,
+            context.getString(R.string.notification_channel_predictions_name),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = context.getString(R.string.notification_channel_predictions_desc)
+            enableVibration(true)
+            setSound(soundUri, audioAttributes)
         }
+        manager.createNotificationChannel(predictionsChannel)
+
+        // 2. Reminders Channel
+        val remindersChannel = NotificationChannel(
+            CHANNEL_REMINDERS,
+            context.getString(R.string.notification_channel_reminders_name),
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = context.getString(R.string.notification_channel_reminders_desc)
+            enableVibration(true)
+            setSound(soundUri, audioAttributes)
+        }
+        manager.createNotificationChannel(remindersChannel)
     }
 
     fun showNotification(
@@ -111,7 +108,7 @@ object NotificationHelper {
     }
 
     fun sendTestNotification(context: Context) {
-        val userName = UserPreferencesManager.getUserName(context)
+        val userName = UserPreferencesManager.DEFAULT_USER_NAME
         val isPrivate = UserPreferencesManager.isPrivateNotifications(context)
         val message = if (isPrivate) {
             "Há uma atualização sobre seu ciclo."
@@ -174,19 +171,11 @@ object NotificationHelper {
                 .toEpochMilli()
 
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    alarmManager.setAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        alarmTimeMillis,
-                        pendingIntent
-                    )
-                } else {
-                    alarmManager.set(
-                        AlarmManager.RTC_WAKEUP,
-                        alarmTimeMillis,
-                        pendingIntent
-                    )
-                }
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    alarmTimeMillis,
+                    pendingIntent
+                )
             } catch (e: Exception) {
                 e.printStackTrace()
             }

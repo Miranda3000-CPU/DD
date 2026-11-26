@@ -43,7 +43,7 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"'
+      - run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0"'
       - name: Restaurar chave de assinatura configurada
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}

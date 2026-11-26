@@ -10,7 +10,7 @@ android {
   defaultConfig {
     applicationId = "com.aistudio.ciclo.menstrual"
     minSdk = 26
-    targetSdk = 36
+    targetSdk = 37
     versionCode = 8
     versionName = "6.2"
 

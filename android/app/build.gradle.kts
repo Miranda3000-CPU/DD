@@ -33,6 +33,10 @@ android {
     targetCompatibility = JavaVersion.VERSION_11
   }
 
+  lint {
+    warningsAsErrors = true
+  }
+
   testOptions {
     unitTests {
       isIncludeAndroidResources = true

@@ -129,16 +129,16 @@ class UserPreferencesManager(private val context: Context) {
 
         fun restorePreferencesMap(context: Context, map: Map<String, String>) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val editor = prefs.edit()
-            for ((key, value) in map) {
-                when {
-                    value.equals("true", ignoreCase = true) -> editor.putBoolean(key, true)
-                    value.equals("false", ignoreCase = true) -> editor.putBoolean(key, false)
-                    value.toIntOrNull() != null -> editor.putInt(key, value.toInt())
-                    else -> editor.putString(key, value)
+            prefs.edit {
+                for ((key, value) in map) {
+                    when {
+                        value.equals("true", ignoreCase = true) -> putBoolean(key, true)
+                        value.equals("false", ignoreCase = true) -> putBoolean(key, false)
+                        value.toIntOrNull() != null -> putInt(key, value.toInt())
+                        else -> putString(key, value)
+                    }
                 }
             }
-            editor.apply()
         }
     }
 }

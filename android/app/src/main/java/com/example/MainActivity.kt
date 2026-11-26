@@ -19,6 +19,7 @@ import android.widget.ProgressBar
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.edit
 import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
@@ -52,6 +53,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private lateinit var webView: WebView
+    private var rendererGone = false
     private lateinit var progressBar: ProgressBar
     private var fileChooserCallback: ValueCallback<Array<Uri>>? = null
     private var pendingPermissionReply: PendingReply? = null
@@ -209,6 +211,14 @@ class MainActivity : ComponentActivity() {
                 return true
             }
 
+            override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {
+                (view.parent as? ViewGroup)?.removeView(view)
+                view.destroy()
+                rendererGone = true
+                finish()
+                return true
+            }
+
             override fun onReceivedError(
                 view: WebView?,
                 request: WebResourceRequest?,
@@ -311,7 +321,7 @@ class MainActivity : ComponentActivity() {
 
             "completeLegacyMigration" -> {
                 getSharedPreferences(BRIDGE_PREFS, MODE_PRIVATE)
-                    .edit().putBoolean(KEY_LEGACY_MIGRATION_COMPLETE, true).apply()
+                    .edit { putBoolean(KEY_LEGACY_MIGRATION_COMPLETE, true) }
                 reply(proxy, id, ok = true, data = JSONObject().put("completed", true))
             }
 
@@ -534,7 +544,9 @@ class MainActivity : ComponentActivity() {
             .put("ok", ok)
         if (data != null) response.put("data", data)
         if (error != null) response.put("error", error)
-        runCatching { proxy.postMessage(response.toString()) }
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            runCatching { proxy.postMessage(response.toString()) }
+        }
     }
 
     private fun openExternalLink(uri: Uri) {
@@ -547,25 +559,24 @@ class MainActivity : ComponentActivity() {
     private fun configureBackNavigation() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (::webView.isInitialized && webView.canGoBack()) webView.goBack()
+                if (::webView.isInitialized && !rendererGone && webView.canGoBack()) webView.goBack()
                 else finish()
             }
         })
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        if (::webView.isInitialized) webView.saveState(outState)
+        if (::webView.isInitialized && !rendererGone) webView.saveState(outState)
         super.onSaveInstanceState(outState)
     }
 
     override fun onDestroy() {
         fileChooserCallback?.onReceiveValue(null)
         fileChooserCallback = null
-        if (::webView.isInitialized) {
+        if (::webView.isInitialized && !rendererGone) {
             (webView.parent as? ViewGroup)?.removeView(webView)
             webView.stopLoading()
             webView.webChromeClient = null
-            webView.webViewClient = WebViewClient()
             webView.destroy()
         }
         super.onDestroy()

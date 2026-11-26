@@ -1,5 +1,6 @@
 package com.example.notification
 
+import androidx.core.content.edit
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -20,9 +21,7 @@ object CyclePredictionScheduler {
 
     fun schedule(context: Context, nextPeriodDate: LocalDate?) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(KEY_NEXT_PERIOD_DATE, nextPeriodDate?.toString())
-            .apply()
+            .edit { putString(KEY_NEXT_PERIOD_DATE, nextPeriodDate?.toString()) }
         scheduleStoredDate(context, nextPeriodDate)
     }
 
@@ -30,9 +29,7 @@ object CyclePredictionScheduler {
         cancelAlarm(context)
         if (clearSavedDate) {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .edit()
-                .remove(KEY_NEXT_PERIOD_DATE)
-                .apply()
+                .edit { remove(KEY_NEXT_PERIOD_DATE) }
         }
     }
 

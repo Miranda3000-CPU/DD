@@ -1,4 +1,4 @@
-import { db, CycleEntry, DailyLogEntry, AppSettings } from './db';
+import { db, type CycleEntry, type DailyLogEntry, type AppSettings } from './db.ts';
 
 const HEADER = 'DDWEB_BACKUP_V1\n';
 

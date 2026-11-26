@@ -1,5 +1,6 @@
 package com.example.util
 
+import androidx.core.content.edit
 import android.content.Context
 import android.content.SharedPreferences
 
@@ -33,7 +34,7 @@ class UserPreferencesManager(private val context: Context) {
         fun setUserName(context: Context, name: String) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val finalName = if (name.isBlank()) DEFAULT_USER_NAME else name.trim()
-            prefs.edit().putString(KEY_USER_NAME, finalName).apply()
+            prefs.edit { putString(KEY_USER_NAME, finalName) }
         }
 
         fun isPrivacyNoticeDismissed(context: Context): Boolean {
@@ -43,7 +44,7 @@ class UserPreferencesManager(private val context: Context) {
 
         fun setPrivacyNoticeDismissed(context: Context, dismissed: Boolean) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_PRIVACY_DISMISSED, dismissed).apply()
+            prefs.edit { putBoolean(KEY_PRIVACY_DISMISSED, dismissed) }
         }
 
         fun isTourDismissed(context: Context): Boolean {
@@ -53,7 +54,7 @@ class UserPreferencesManager(private val context: Context) {
 
         fun setTourDismissed(context: Context, dismissed: Boolean) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_TOUR_DISMISSED, dismissed).apply()
+            prefs.edit { putBoolean(KEY_TOUR_DISMISSED, dismissed) }
         }
 
         fun isNotificationsEnabled(context: Context): Boolean {
@@ -63,7 +64,7 @@ class UserPreferencesManager(private val context: Context) {
 
         fun setNotificationsEnabled(context: Context, enabled: Boolean) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled).apply()
+            prefs.edit { putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled) }
         }
 
         fun isPrivateNotifications(context: Context): Boolean {
@@ -73,7 +74,7 @@ class UserPreferencesManager(private val context: Context) {
 
         fun setPrivateNotifications(context: Context, isPrivate: Boolean) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_PRIVATE_NOTIFICATIONS, isPrivate).apply()
+            prefs.edit { putBoolean(KEY_PRIVATE_NOTIFICATIONS, isPrivate) }
         }
 
         fun isNotify3DaysBefore(context: Context): Boolean {
@@ -83,7 +84,7 @@ class UserPreferencesManager(private val context: Context) {
 
         fun setNotify3DaysBefore(context: Context, enabled: Boolean) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_NOTIFY_3_DAYS, enabled).apply()
+            prefs.edit { putBoolean(KEY_NOTIFY_3_DAYS, enabled) }
         }
 
         fun isNotifyDayOfPeriod(context: Context): Boolean {
@@ -93,7 +94,7 @@ class UserPreferencesManager(private val context: Context) {
 
         fun setNotifyDayOfPeriod(context: Context, enabled: Boolean) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_NOTIFY_DAY_OF, enabled).apply()
+            prefs.edit { putBoolean(KEY_NOTIFY_DAY_OF, enabled) }
         }
 
         fun isNotifyDailyReminder(context: Context): Boolean {
@@ -103,7 +104,7 @@ class UserPreferencesManager(private val context: Context) {
 
         fun setNotifyDailyReminder(context: Context, enabled: Boolean) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putBoolean(KEY_NOTIFY_REMINDER, enabled).apply()
+            prefs.edit { putBoolean(KEY_NOTIFY_REMINDER, enabled) }
         }
 
         fun getNotificationTime(context: Context): Pair<Int, Int> {
@@ -115,7 +116,10 @@ class UserPreferencesManager(private val context: Context) {
 
         fun setNotificationTime(context: Context, hour: Int, minute: Int) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putInt(KEY_NOTIF_HOUR, hour).putInt(KEY_NOTIF_MINUTE, minute).apply()
+            prefs.edit {
+                putInt(KEY_NOTIF_HOUR, hour)
+                putInt(KEY_NOTIF_MINUTE, minute)
+            }
         }
 
         fun getAllPreferencesMap(context: Context): Map<String, String> {

@@ -38,7 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
                     val now = System.currentTimeMillis()
                     db.execSQL(
                         "UPDATE cycle_records SET uuid = ?, createdAtEpochMilli = ?, updatedAtEpochMilli = ? WHERE id = ?",
-                        arrayOf(generatedUuid, now, now, id)
+                        arrayOf<Any>(generatedUuid, now, now, id)
                     )
                 }
                 cursor.close()

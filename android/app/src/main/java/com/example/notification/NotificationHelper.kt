@@ -7,7 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.MainActivity
@@ -30,7 +30,7 @@ object NotificationHelper {
     const val ALARM_REQUEST_REMINDER = 2002
 
     fun createNotificationChannels(context: Context) {
-        val soundUri = Uri.parse("android.resource://${context.packageName}/${R.raw.dd_notification}")
+        val soundUri = "android.resource://${context.packageName}/${R.raw.dd_notification}".toUri()
         val audioAttributes = AudioAttributes.Builder()
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .setUsage(AudioAttributes.USAGE_NOTIFICATION)

@@ -49,7 +49,7 @@ ksp {
 }
 
 dependencies {
-  implementation("androidx.activity:activity-ktx:1.10.1")
+  implementation(libs.androidx.activity.ktx)
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.webkit)
   implementation(libs.androidx.lifecycle.runtime.ktx)

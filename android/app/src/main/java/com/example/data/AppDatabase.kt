@@ -88,7 +88,15 @@ abstract class AppDatabase : RoomDatabase() {
                             (uuid, dateEpochDay, flowIntensity, symptoms, notes, createdAtEpochMilli, updatedAtEpochMilli)
                             VALUES (?, ?, ?, ?, ?, ?, ?)
                             """.trimIndent(),
-                            arrayOf(logUuid, startDateEpochDay, flow, symptoms, notes, timestamp, timestamp)
+                            arrayOf<Any?>(
+                                logUuid,
+                                startDateEpochDay,
+                                flow,
+                                symptoms,
+                                notes,
+                                timestamp,
+                                timestamp,
+                            )
                         )
                     }
                 }

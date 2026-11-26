@@ -36,7 +36,7 @@ import {
   testNotification,
   selectAndroidBackupFile,
 } from '../native/androidBridge';
-import { exportBackup, importBackup } from '../services/backup';
+import { exportBackup, importBackup, MIN_BACKUP_PASSWORD_LENGTH } from '../services/backup';
 import { Download, Upload, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDate } from '../utils/dateUtils';
@@ -342,7 +342,7 @@ export default function SettingsPage() {
               </p>
               <div className="space-y-2">
                 <Label htmlFor="backup-password">
-                  Senha do backup (mínimo 10 caracteres para exportar)
+                  Senha do backup (mínimo {MIN_BACKUP_PASSWORD_LENGTH} caracteres para exportar)
                 </Label>
                 <Input
                   id="backup-password"
@@ -350,14 +350,14 @@ export default function SettingsPage() {
                   autoComplete="new-password"
                   value={backupPassword}
                   onChange={(e) => setBackupPassword(e.target.value)}
-                  placeholder="Crie uma senha forte"
+                  placeholder="Digite sua senha ou PIN"
                 />
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Button
                   variant="outline"
                   className="rounded-xl"
-                  disabled={backupBusy || backupPassword.length < 10}
+                  disabled={backupBusy || backupPassword.length < MIN_BACKUP_PASSWORD_LENGTH}
                   onClick={async () => {
                     setBackupBusy(true);
                     try {

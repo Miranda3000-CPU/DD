@@ -1,5 +1,7 @@
 import { db, type CycleEntry, type DailyLogEntry, type AppSettings } from './db.ts';
 
+export const MIN_BACKUP_PASSWORD_LENGTH = 4;
+
 const HEADER = 'DDWEB_BACKUP_V1\n';
 
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
@@ -45,7 +47,9 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
 }
 
 export async function exportBackup(password: string): Promise<Blob> {
-  if (password.length < 10) throw new Error('Use uma senha com pelo menos 10 caracteres.');
+  if (password.length < MIN_BACKUP_PASSWORD_LENGTH) {
+    throw new Error(`Use uma senha com pelo menos ${MIN_BACKUP_PASSWORD_LENGTH} caracteres.`);
+  }
   const payload: Payload = {
     formatVersion: 1,
     exportedAt: new Date().toISOString(),

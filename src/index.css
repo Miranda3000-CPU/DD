@@ -2,6 +2,103 @@
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
 
+@keyframes avatar-breathe {
+  0%,
+  100% {
+    transform: translateY(2px) scale(0.99);
+  }
+  50% {
+    transform: translateY(-3px) scale(1);
+  }
+}
+
+@keyframes avatar-greet {
+  0% {
+    transform: translateY(12px) scale(0.94) rotate(-2deg);
+  }
+  55% {
+    transform: translateY(-5px) scale(1.02) rotate(1deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+
+@keyframes avatar-bright {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  35% {
+    transform: translateY(-7px) rotate(-1deg);
+  }
+  70% {
+    transform: translateY(1px) rotate(1deg);
+  }
+}
+
+@keyframes avatar-heart-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.6);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-32px) scale(1.15);
+  }
+}
+
+.cycle-avatar-art {
+  animation: avatar-breathe 3.8s ease-in-out infinite;
+  filter: drop-shadow(0 5px 8px rgb(178 98 165 / 16%));
+  will-change: transform;
+}
+
+.cycle-avatar[data-phase='follicular'] .cycle-avatar-art {
+  animation-duration: 2.6s;
+}
+
+.cycle-avatar[data-phase='ovulatory'] .cycle-avatar-art {
+  animation-name: avatar-bright;
+  animation-duration: 2s;
+}
+
+.cycle-avatar[data-interacting='true'] .cycle-avatar-art {
+  animation: avatar-greet 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.cycle-avatar-hearts i {
+  position: absolute;
+  bottom: 25%;
+  color: hsl(330 84% 69% / 85%);
+  font-size: 17px;
+  font-style: normal;
+  animation: avatar-heart-rise 900ms ease-out both;
+}
+
+.cycle-avatar-hearts i:nth-child(1) {
+  left: 24%;
+}
+.cycle-avatar-hearts i:nth-child(2) {
+  left: 67%;
+  animation-delay: 100ms;
+}
+.cycle-avatar-hearts i:nth-child(3) {
+  left: 47%;
+  animation-delay: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cycle-avatar-art,
+  .cycle-avatar-hearts i {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

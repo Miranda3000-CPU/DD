@@ -385,8 +385,19 @@ a {
   backdrop-filter: blur(18px);
 }
 
-:where([class*='fixed'][class*='bottom-0']) {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+.bottom-dialog {
+  --top-gap: max(0.75rem, env(safe-area-inset-top, 0px));
+  --bottom-gap: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  inset-inline: max(0.75rem, env(safe-area-inset-left, 0px))
+    max(0.75rem, env(safe-area-inset-right, 0px));
+  bottom: var(--bottom-gap);
+  margin-inline: auto;
+  max-width: 28rem;
+  max-height: calc(100vh - var(--top-gap) - var(--bottom-gap));
+  max-height: calc(100dvh - var(--top-gap) - var(--bottom-gap));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 ::selection {

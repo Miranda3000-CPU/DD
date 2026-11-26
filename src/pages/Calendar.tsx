@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 export default function CalendarPage() {
   const { cycles, settings, isLoading } = useCycle();
-  const { calendarTourSeen, acknowledgeCalendarTour } = useAppMetaContext();
+  const { privacySeen, calendarTourSeen, acknowledgeCalendarTour } = useAppMetaContext();
 
   return (
     <PageTransition className="pb-24 pt-6 px-6 max-w-md mx-auto min-h-screen">
@@ -36,7 +36,10 @@ export default function CalendarPage() {
           <CalendarView cycles={cycles} settings={settings} />
 
           {/* One-time color legend tour — shown below the calendar */}
-          <CalendarTour visible={!calendarTourSeen} onDismiss={acknowledgeCalendarTour} />
+          <CalendarTour
+            visible={privacySeen && !calendarTourSeen}
+            onDismiss={acknowledgeCalendarTour}
+          />
         </>
       )}
     </PageTransition>

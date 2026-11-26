@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { BottomDialog, BottomDialogTitle, BottomDialogDescription } from './ui/bottom-dialog';
 import { ChevronRight, ChevronLeft, Check, Droplets, Leaf, Circle } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -58,110 +58,82 @@ export function CalendarTour({ visible, onDismiss }: CalendarTourProps) {
   const prev = () => setStep((s) => Math.max(0, s - 1));
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <>
-          {/* Dim overlay */}
-          <motion.div
-            key="tour-backdrop"
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+    <BottomDialog open={visible} onDismiss={onDismiss}>
+      {/* Step dots */}
+      <div className="flex justify-center gap-2 mb-5">
+        {STEPS.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              i === step ? 'w-6 bg-primary' : i < step ? 'w-3 bg-primary/40' : 'w-3 bg-muted'
+            }`}
           />
+        ))}
+      </div>
 
-          {/* Step card — slides up from bottom */}
-          <motion.div
-            key={`tour-step-${step}`}
-            className="fixed bottom-20 inset-x-0 z-50 max-w-md mx-auto px-4"
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 40, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 340, damping: 30 }}
+      {/* Color swatch + icon */}
+      <div className="flex items-center gap-4 mb-4">
+        <div
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shrink-0 ${current.color}`}
+        >
+          {current.icon}
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className={`w-3 h-3 rounded-full ${current.dotColor}`} />
+            <span className="text-xs text-muted-foreground font-medium">
+              Passo {step + 1} de {STEPS.length}
+            </span>
+          </div>
+          <BottomDialogTitle className="text-base font-semibold text-foreground leading-tight">
+            {current.title}
+          </BottomDialogTitle>
+        </div>
+      </div>
+
+      <BottomDialogDescription className="text-sm text-muted-foreground leading-relaxed mb-6">
+        {current.description}
+      </BottomDialogDescription>
+
+      {/* Navigation */}
+      <div className="flex gap-3">
+        {step > 0 ? (
+          <Button
+            variant="outline"
+            className="h-11 w-11 rounded-2xl border-border/60 p-0 shrink-0"
+            onClick={prev}
+            aria-label="Passo anterior"
           >
-            <div className="bg-card border border-border/50 rounded-3xl shadow-2xl p-6">
-              {/* Step dots */}
-              <div className="flex justify-center gap-2 mb-5">
-                {STEPS.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === step
-                        ? 'w-6 bg-primary'
-                        : i < step
-                          ? 'w-3 bg-primary/40'
-                          : 'w-3 bg-muted'
-                    }`}
-                  />
-                ))}
-              </div>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            className="h-11 flex-1 rounded-2xl text-muted-foreground text-sm"
+            onClick={onDismiss}
+          >
+            Pular
+          </Button>
+        )}
 
-              {/* Color swatch + icon */}
-              <div className="flex items-center gap-4 mb-4">
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shrink-0 ${current.color}`}
-                >
-                  {current.icon}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-3 h-3 rounded-full ${current.dotColor}`} />
-                    <span className="text-xs text-muted-foreground font-medium">
-                      Passo {step + 1} de {STEPS.length}
-                    </span>
-                  </div>
-                  <h3 className="text-base font-semibold text-foreground leading-tight">
-                    {current.title}
-                  </h3>
-                </div>
-              </div>
-
-              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                {current.description}
-              </p>
-
-              {/* Navigation */}
-              <div className="flex gap-3">
-                {step > 0 ? (
-                  <Button
-                    variant="outline"
-                    className="h-11 w-11 rounded-2xl border-border/60 p-0 shrink-0"
-                    onClick={prev}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    className="h-11 flex-1 rounded-2xl text-muted-foreground text-sm"
-                    onClick={onDismiss}
-                  >
-                    Pular
-                  </Button>
-                )}
-
-                <Button
-                  className="h-11 flex-1 rounded-2xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2"
-                  onClick={next}
-                  data-testid={isLast ? 'button-calendar-tour-ok' : 'button-tour-next'}
-                >
-                  {isLast ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Entendido
-                    </>
-                  ) : (
-                    <>
-                      Próximo
-                      <ChevronRight className="w-4 h-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+        <Button
+          className="h-11 flex-1 rounded-2xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2"
+          onClick={next}
+          data-testid={isLast ? 'button-calendar-tour-ok' : 'button-tour-next'}
+        >
+          {isLast ? (
+            <>
+              <Check className="w-4 h-4" />
+              Entendido
+            </>
+          ) : (
+            <>
+              Próximo
+              <ChevronRight className="w-4 h-4" />
+            </>
+          )}
+        </Button>
+      </div>
+    </BottomDialog>
   );
 }

@@ -59,7 +59,7 @@ export function InstallPrompt() {
       {showIOSGuide && (
         <motion.div
           key="install-ios"
-          className="fixed bottom-20 inset-x-0 z-30 max-w-md mx-auto px-4"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] inset-x-0 z-30 max-w-md max-h-[calc(100dvh-6rem-env(safe-area-inset-bottom)-env(safe-area-inset-top))] overflow-y-auto overscroll-contain mx-auto px-4"
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 32 }}

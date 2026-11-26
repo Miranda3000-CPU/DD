@@ -22,7 +22,10 @@ import modelUrl from '../../assets/avatar/giovanna.glb?url';
 import type { AvatarProps } from './CycleAvatar';
 import { phaseVisuals } from './avatarConfig';
 
+import { gestureFor, gestureEnvelope } from './avatarGestures';
+
 export interface AvatarScene {
+  interact: (side: number) => void;
   update: (props: AvatarProps) => void;
 }
 
@@ -161,6 +164,11 @@ export function createAvatarScene(
   scene.add(figure, ambient, key, rim, particles, shadow);
 
   let target = phaseVisuals(initial.currentPhase);
+  let gesture = gestureFor(initial.currentPhase);
+  let reactionStart = -Infinity;
+  let look = 0;
+  let resetTimer = 0;
+  const pose = { ...gesture };
   const motion = { ...target };
   const tint = new Color(target.tint);
   rim.color.copy(tint);
@@ -201,39 +209,51 @@ export function createAvatarScene(
     if (!reduced) clock += dt * motion.speed;
     const breath = reduced ? 0 : Math.sin(clock * 1.7);
     const sway = reduced ? 0 : Math.sin(clock * 0.94) * motion.sway;
-    figure.position.y = 0.047 + breath * 0.012;
+    const seconds = (now - reactionStart) / 1000;
+    const reaction = reduced ? Number(seconds < 1.4) : gestureEnvelope(seconds);
+    const idle = reduced ? 0 : 0.5 + 0.5 * Math.sin(clock * 1.25);
+    const energy = 0.18 + 0.16 * idle + 0.66 * reaction;
+    for (const key of ['arms', 'wave', 'elbows', 'nod', 'wink', 'bounce'] as const)
+      pose[key] += (gesture[key] - pose[key]) * blend;
+    figure.position.y =
+      0.047 + breath * 0.023 + (reduced ? 0 : pose.bounce * energy * Math.abs(Math.sin(clock * 3)));
     figure.rotation.y = -0.075 + sway * 0.055;
     if (torso) {
       torso.scale.y = 1 + breath * 0.009;
       torso.rotation.z = sway * 0.012;
     }
     if (head) {
-      head.rotation.y = sway * 0.08;
+      head.rotation.y = sway * 0.14 + look * reaction * 0.34;
       head.rotation.z = 0.035 + sway * 0.021;
-      head.rotation.x = 0.025 - motion.smile * 0.045;
+      head.rotation.x = 0.025 - motion.smile * 0.045 + pose.nod * energy;
     }
-    for (const { weights, index } of smiles) weights[index] = motion.smile;
+    for (const { weights, index } of smiles)
+      weights[index] = Math.min(1, motion.smile + 0.56 * reaction);
     const blinkTime = clock % 4.65;
     const blink = !reduced && blinkTime > 4.4 ? Math.sin(((blinkTime - 4.4) / 0.25) * Math.PI) : 0;
     const openness = (0.85 + 0.13 * motion.smile) * (1 - 0.94 * blink);
-    if (leftEye) leftEye.scale.y = openness;
+    if (leftEye) leftEye.scale.y = openness * (1 - pose.wink * reaction);
     if (rightEye) rightEye.scale.y = openness;
     if (leftArm) {
-      leftArm.rotation.z = 0.04 + 0.16 * motion.smile + sway * 0.026;
+      leftArm.rotation.z = 0.04 + 0.16 * motion.smile + sway * 0.06 + pose.arms * energy;
       leftArm.rotation.x = -0.08 - 0.1 * motion.smile;
     }
     if (rightArm) {
-      rightArm.rotation.z = -0.06 - 0.18 * motion.smile - sway * 0.03;
+      rightArm.rotation.z =
+        -0.06 -
+        0.18 * motion.smile -
+        sway * 0.06 -
+        (pose.arms + pose.wave * (1 + 0.18 * Math.sin(clock * 7))) * energy;
       rightArm.rotation.x = -0.14 - 0.35 * motion.smile;
     }
-    if (leftForearm) leftForearm.rotation.x = -0.05 - 0.12 * motion.smile;
-    if (rightForearm) rightForearm.rotation.x = -0.07 - 0.22 * motion.smile;
+    if (leftForearm) leftForearm.rotation.x = -0.05 - 0.12 * motion.smile - pose.elbows * energy;
+    if (rightForearm) rightForearm.rotation.x = -0.07 - 0.22 * motion.smile - pose.elbows * energy;
     if (leftBrow) leftBrow.position.y = leftBrowY + 0.004 * motion.smile;
     if (rightBrow) rightBrow.position.y = rightBrowY + 0.003 * motion.smile;
     rim.color.lerp(tint, blend);
     particles.material.uniforms.tint.value.copy(rim.color);
     particles.material.uniforms.time.value = clock;
-    particles.material.uniforms.opacity.value = motion.sparkle;
+    particles.material.uniforms.opacity.value = motion.sparkle + reaction * 0.28;
     particles.material.uniforms.petals.value = motion.petals;
     particles.material.uniforms.glint.value = motion.glint;
     shadow.scale.x = 1 - breath * 0.035;
@@ -295,6 +315,7 @@ export function createAvatarScene(
     'abort',
     () => {
       cancelAnimationFrame(request);
+      window.clearTimeout(resetTimer);
       size.disconnect();
       visibility.disconnect();
       releaseObjects(scene);
@@ -341,7 +362,16 @@ export function createAvatarScene(
     if (!signal.aborted) setState('unavailable');
   });
   return {
+    interact(side) {
+      if (!ready || lost) return;
+      look = side;
+      reactionStart = performance.now();
+      window.clearTimeout(resetTimer);
+      resetTimer = window.setTimeout(schedule, 1450);
+      schedule();
+    },
     update(props) {
+      gesture = gestureFor(props.currentPhase);
       target = phaseVisuals(props.currentPhase);
       tint.set(target.tint);
       schedule();

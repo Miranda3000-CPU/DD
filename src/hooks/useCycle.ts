@@ -135,8 +135,10 @@ export function useCycle() {
     try {
       await db.settings.update(1, newSettings);
       toast.success('Configurações atualizadas');
+      return true;
     } catch (error) {
       toast.error('Erro ao atualizar configurações');
+      return false;
     }
   };
 

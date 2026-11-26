@@ -31,6 +31,7 @@ export interface DailyLogEntry {
 }
 
 export interface AppSettings {
+  displayName?: string;
   id?: number;
   cycleLength: number;
   periodDuration: number;

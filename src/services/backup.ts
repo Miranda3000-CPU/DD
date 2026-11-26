@@ -261,6 +261,7 @@ export async function importBackup(
       if (isDefaultSettings) {
         for (const setting of payload.settings) {
           const copy = { ...setting, id: 1 };
+          if (current?.displayName) copy.displayName = current.displayName;
           await db.settings.put(copy);
         }
       }

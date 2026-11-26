@@ -53,6 +53,22 @@ export function CycleAvatar({ currentPhase, cycleDay }: AvatarProps) {
         aria-hidden={state !== 'ready'}
         className="block h-full w-full"
       />
+      {state === 'ready' && (
+        <button
+          type="button"
+          className="absolute inset-0 cursor-pointer touch-manipulation rounded-2xl focus-visible:outline-primary"
+          aria-label="Interagir com a personagem"
+          onClick={(event) => {
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const side = event.detail ? (2 * (event.clientX - bounds.left)) / bounds.width - 1 : 0;
+            scene.current?.interact(Math.max(-1, Math.min(1, side)));
+          }}
+        >
+          <span className="absolute bottom-0 inset-x-0 text-[11px] text-muted-foreground">
+            Toque para interagir
+          </span>
+        </button>
+      )}
       {state === 'unavailable' && (
         <figcaption className="absolute inset-0 grid place-content-center p-3 text-center text-xs text-muted-foreground">
           Visualização 3D indisponível neste dispositivo.

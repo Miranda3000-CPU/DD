@@ -10,15 +10,34 @@ import { FAB } from '../components/FAB';
 import { LogCycleModal } from '../components/LogCycleModal';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card, CardContent } from '../components/ui/card';
+import {
+  BottomDialog,
+  BottomDialogTitle,
+  BottomDialogDescription,
+} from '../components/ui/bottom-dialog';
+import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
-import { Activity, Clock, Sparkles, CalendarHeart } from 'lucide-react';
+import { Activity, Clock, Sparkles, CalendarHeart, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Dashboard() {
-  const { cycles, calculations, isLoading, logToday, settings, avgCycleLength, cycleDurations } =
-    useCycle();
+  const {
+    cycles,
+    calculations,
+    isLoading,
+    logToday,
+    settings,
+    updateSettings,
+    avgCycleLength,
+    cycleDurations,
+  } = useCycle();
   const forecast = calculateCycleForecast(cycles);
   const [logModalOpen, setLogModalOpen] = useState(false);
+
+  const displayName =
+    (typeof settings.displayName === 'string' && settings.displayName.trim()) || 'Giovanna';
+  const [draftName, setDraftName] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
 
   useNotifications(calculations, settings.notificationsEnabled);
 
@@ -33,15 +52,27 @@ export default function Dashboard() {
   return (
     <PageTransition className="pb-28 pt-6 px-6 max-w-md mx-auto min-h-screen">
       <header className="mb-5 grid grid-cols-[minmax(0,1fr)_minmax(0,46%)] items-center gap-1">
-        <div>
-          <motion.h1
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-2xl font-bold text-foreground"
-            data-testid="text-greeting"
-          >
-            Olá, Giovanna!
-          </motion.h1>
+        <div className="min-w-0">
+          <div className="flex items-center">
+            <motion.h1
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="min-w-0 break-words text-2xl font-bold text-foreground"
+              data-testid="text-greeting"
+            >
+              Olá, {displayName}!
+            </motion.h1>
+            <button
+              type="button"
+              aria-label="Editar nome"
+              title="Editar nome"
+              disabled={isLoading}
+              onClick={() => setDraftName(displayName)}
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Pencil className="size-3.5" aria-hidden="true" />
+            </button>
+          </div>
           <motion.p
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -58,6 +89,54 @@ export default function Dashboard() {
           />
         </div>
       </header>
+      <BottomDialog
+        open={draftName !== null}
+        dismissOnBackdrop
+        onDismiss={() => {
+          if (!savingName) setDraftName(null);
+        }}
+      >
+        <BottomDialogTitle className="text-lg font-semibold">Editar nome</BottomDialogTitle>
+        <BottomDialogDescription className="mt-1 text-sm text-muted-foreground">
+          Como você quer ser chamada no diário?
+        </BottomDialogDescription>
+        <form
+          className="mt-4 space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const name = draftName?.trim();
+            if (!name || savingName) return;
+            setSavingName(true);
+            if (await updateSettings({ displayName: name })) setDraftName(null);
+            setSavingName(false);
+          }}
+        >
+          <label className="block text-sm font-medium" htmlFor="diary-display-name">
+            Nome
+          </label>
+          <Input
+            id="diary-display-name"
+            autoComplete="given-name"
+            value={draftName ?? ''}
+            disabled={savingName}
+            onChange={(event) => setDraftName(event.target.value)}
+            required
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              type="button"
+              disabled={savingName}
+              onClick={() => setDraftName(null)}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={!draftName?.trim() || savingName}>
+              Salvar
+            </Button>
+          </div>
+        </form>
+      </BottomDialog>
 
       <div className="space-y-6">
         <CycleCard calculations={calculations} isLoading={isLoading} />

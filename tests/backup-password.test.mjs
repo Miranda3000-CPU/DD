@@ -18,3 +18,17 @@ test('exporta e restaura registros com PIN de quatro dígitos repetidos', async 
   assert.equal((await importBackup(file, '0000')).cyclesAdded, 1);
   assert.equal((await db.cycles.toArray())[0].startDate, cycle.startDate);
 });
+
+test('restaura o nome salvo e preserva uma saudação já personalizada no dispositivo', async (t) => {
+  await db.open();
+  t.after(() => db.delete());
+  const settings = { id: 1, cycleLength: 28, periodDuration: 5, notificationsEnabled: false };
+  await db.settings.put({ ...settings, displayName: 'Gigi' });
+  const file = new File([await exportBackup('1234')], 'nome.ddwebbackup');
+  await db.settings.put(settings);
+  await importBackup(file, '1234');
+  assert.equal((await db.settings.get(1)).displayName, 'Gigi');
+  await db.settings.update(1, { displayName: 'Gi' });
+  await importBackup(file, '1234');
+  assert.equal((await db.settings.get(1)).displayName, 'Gi');
+});
